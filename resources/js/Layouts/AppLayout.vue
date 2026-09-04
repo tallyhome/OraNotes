@@ -1,6 +1,6 @@
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import CommandPalette from '@/Components/CommandPalette.vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
 import { applyTheme } from '@/composables/useTheme';
@@ -29,6 +29,7 @@ onMounted(() => {
     applyTheme(user.value?.theme ?? 'auto');
     window.addEventListener('keydown', onKey);
 });
+watch(() => user.value?.theme, (theme) => applyTheme(theme ?? 'auto'));
 onUnmounted(() => window.removeEventListener('keydown', onKey));
 </script>
 

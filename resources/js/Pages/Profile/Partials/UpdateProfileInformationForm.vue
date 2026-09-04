@@ -24,6 +24,30 @@ const form = useForm({
     locale: user.locale || 'fr',
     avatar: null,
 });
+
+function submit() {
+    const payload = {
+        name: form.name,
+        email: form.email,
+        theme: form.theme,
+        locale: form.locale,
+    };
+
+    if (form.avatar) {
+        form.transform(() => ({ ...payload, avatar: form.avatar, _method: 'patch' })).post(route('profile.update'), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => applyTheme(form.theme),
+        });
+
+        return;
+    }
+
+    form.transform(() => payload).patch(route('profile.update'), {
+        preserveScroll: true,
+        onSuccess: () => applyTheme(form.theme),
+    });
+}
 </script>
 
 <template>
@@ -39,7 +63,7 @@ const form = useForm({
         </header>
 
         <form
-            @submit.prevent="form.transform((data) => data).patch(route('profile.update'), { forceFormData: true, onSuccess: () => applyTheme(form.theme) })"
+            @submit.prevent="submit"
             class="mt-6 space-y-6"
         >
             <div>

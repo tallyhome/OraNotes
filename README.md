@@ -2,11 +2,11 @@
 
 Application web de prise de notes **spatiale** : un bureau virtuel de Post-it. Chaque note est un document [OraEditor](https://github.com/tallyhome/OraEditor) complet.
 
-> Version : **1.0.3**
+> Version : **1.1.0**
 
 ## À propos
 
-OraNotes n’est pas une liste de notes. L’organisation spatiale (position, taille, couleur, superposition) est l’expérience principale. Blend : bureau virtuel + tableau blanc + Post-it + notes modernes + partage.
+OraNotes n’est pas une liste de notes. L’organisation spatiale (position, taille, couleur, superposition) est l’expérience principale. Blend : bureau virtuel + tableau blanc + Post-it + notes modernes + partage + collaboration CRDT.
 
 ## Intégration OraEditor
 
@@ -17,29 +17,37 @@ OraNotes n’est pas une liste de notes. L’organisation spatiale (position, ta
 | Source de vérité | Document Model JSON (`getJSON` / `setJSON`) |
 | HTML | Dérivé (`getHTML`) pour miniatures, export et recherche |
 | Méthode | Kit officiel `ready/ora-editor/` vendorisé dans `public/vendor/ora-editor/` |
-| Pourquoi pas npm / Composer | `@ora-editor/*` et `ora/laravel` ne sont pas publiés |
-| Instanciation | `new window.OraEditor()` uniquement en mode édition (modal) |
-| Miniatures | Aperçu HTML sanitisé, **zéro** instance OraEditor sur le canvas |
+| Collab | Yjs fusionne les nœuds texte ; le serveur autorise puis relaie |
 | Upload | Contrôleur Laravel (MIME réel, taille, extension, CSRF) |
-| Thème | `light` / `dark` / `auto`, aligné sur les préférences utilisateur |
 
-Détail : [docs/ora-editor-analysis.md](docs/ora-editor-analysis.md) · [docs/architecture.md](docs/architecture.md) · [public/vendor/ora-editor/NOTICE](public/vendor/ora-editor/NOTICE)
+Détail : [docs/ora-editor-analysis.md](docs/ora-editor-analysis.md) · [docs/architecture.md](docs/architecture.md) · [docs/collaboration.md](docs/collaboration.md)
 
 ## Stack
 
 - PHP 8.3+ · **Laravel 13**
-- Vue 3 · Inertia.js · Vite 8 · Tailwind CSS 3
+- Vue 3 · Inertia.js · Vite 8 · Tailwind CSS 3 · Yjs 13
 - SQLite (local / tests) · MySQL 8 / MariaDB (production)
 - OraEditor 0.1.3 (bundle `ready/`)
 
 ## Prérequis
 
-- PHP 8.3+ avec extensions : `mbstring`, `xml`, `curl`, `sqlite3` (ou `pdo_mysql`), `zip`, `gd`, `bcmath`, `intl`
+- PHP 8.3+ : `mbstring`, `xml`, `curl`, `sqlite3` ou `pdo_mysql`, `zip`, `gd`, `bcmath`, `intl`
 - Composer 2
-- Node.js 20+ et npm
-- SQLite (dev) ou MySQL / MariaDB (prod)
+- Node.js 20+ **uniquement pour compiler** les assets (`npm run build`)
+- En production, un paquet distributable inclut `public/build` : **Node n’est pas requis à l’exécution**
 
 ## Installation
+
+### Assistant web (classique)
+
+1. Déposer le code (ou le zip `scripts/package-dist.sh`)
+2. Document root = `public/`
+3. Ouvrir `/install` si l’instance n’est pas déjà installée
+4. Contrôles système → base (test PDO réel) → config → compte admin → migrations
+
+Le wizard se **verrouille** après succès (`storage/app/installed.lock`). Il refuse de réinstaller une instance existante. Documentation : [Doc/installer.html](Doc/installer.html).
+
+### Ligne de commande (dev)
 
 ```bash
 git clone https://github.com/tallyhome/OraNotes.git
@@ -55,22 +63,7 @@ npm run build
 php artisan serve
 ```
 
-Ouvrir `http://localhost:8000`. En développement frontend : `npm run dev` en parallèle de `php artisan serve`.
-
-### MySQL / MariaDB
-
-Dans `.env` :
-
-```
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=oranotes
-DB_USERNAME=oranotes
-DB_PASSWORD=…
-```
-
-Puis `php artisan migrate --seed`.
+Guides par plateforme : [Doc/index.html](Doc/index.html) (Linux, Windows, Apache, Nginx, IIS, cPanel, Webuzo, Plesk, MySQL, MariaDB).
 
 ### Créer un administrateur
 
@@ -89,7 +82,36 @@ php artisan oranotes:create-admin admin@example.com "Ada Admin" --password="un-m
 | Utilisateur | `bob@oranotes.test` |
 | Utilisatrice | `clara@oranotes.test` |
 
-Alice possède plusieurs bureaux, ~24 notes, tags, favoris et partages vers Bob (édition) et Clara (lecture).
+## Fonctionnalités 1.1
+
+- Auth, rôles `user` / `admin`, comptes activables
+- Workspaces : créer, renommer, icône, couleur, défaut, dupliquer, archiver, restaurer, **suppression définitive confirmée**, **verrou**
+- Canvas : drag, resize, multi-sélection, zoom, pan, pinch, **grille réelle**, snap, aligner / répartir, z-index, verrou note, espace extensible
+- Notes OraEditor, autosave, brouillon local, favori, archive, corbeille
+- Partage user (lecture / édition) et lien tokenisé
+- **Collaboration Yjs + SSE** (présence, hors-ligne, révocation mid-session)
+- Recherche LIKE + FULLTEXT MySQL
+- Notifications (partage, modification, rejoint, accès révoqué, invitation ouverte)
+- Admin : dashboard, users, bureaux, notes, activité, système, updates, settings, security, storage, health
+- Auto-update **GitHub Releases uniquement** (intégrité, backup, rollback best-effort — pas atomique)
+- Export JSON / HTML, uploads sécurisés
+- Journal d’audit admin (sans secrets)
+
+## Admin
+
+`/admin` (rôle admin). Suppression utilisateurs : [docs/user-deletion.md](docs/user-deletion.md). Santé : `/admin/health`. Mises à jour : `/admin/updates` — jamais d’URL arbitraire.
+
+## Collaboration
+
+Voir [docs/collaboration.md](docs/collaboration.md). Autorisation Policy **avant** l’état et le flux SSE. Un lecteur ne pousse pas d’updates.
+
+## Auto-update
+
+Source : `api.github.com` + `ORANOTES_UPDATE_REPO` (défaut `tallyhome/OraNotes`). Hash, anti-downgrade, anti-traversal, skip `.env` / `storage`. Rollback fichiers + SQLite si présent, **non garanti atomique**.
+
+## Sécurité
+
+Policies, UUID publics, anti-énumération login, CSP Report-Only, limites OraEditor, uploads MIME. Détail : [Doc/security.html](Doc/security.html), [docs/csp.md](docs/csp.md).
 
 ## Tests
 
@@ -97,44 +119,29 @@ Alice possède plusieurs bureaux, ~24 notes, tags, favoris et partages vers Bob 
 php artisan test
 vendor/bin/pint --test
 npm run build
+npx playwright install chromium
+npm run e2e
 ```
 
-La suite inclut l’auth Breeze, le CRUD workspaces/notes, la recherche, et des **tests de sécurité IDOR / partage / comptes désactivés / admin**.
+PHPUnit : auth, workspaces/lock, canvas positions, admin, install lock, update security, collab, IDOR, perf 100/250 notes. E2E Chromium : login, grille, lock, OraEditor, admin, responsive.
 
-## Fonctionnalités V1
+## Distribution
 
-- Auth : inscription, connexion, reset mot de passe, vérification e-mail, profil, avatar, thème clair/sombre/auto
-- Rôles `user` / `admin`, comptes activables
-- Workspaces (bureaux) : créer, renommer, archiver, dupliquer, icône, couleur, défaut, membres
-- Bureau virtuel : drag, resize, multi-sélection, zoom, pan, pinch, grille, aligner, z-index, verrou
-- Notes : titre, JSON OraEditor, couleur, statut, priorité, tags, favori, archive, corbeille
-- Autosave contenu (debounce) + positions (throttle) + brouillon `localStorage`
-- Partage utilisateur (lecture / édition) et lien tokenisé (lecture, expiration, révocation)
-- Recherche globale + palette ⌘/Ctrl+K
-- Notifications in-app, journal d’activité
-- Admin : stats, utilisateurs, notes, bureaux, journal
-- Export JSON / HTML
-- Uploads sécurisés pour OraEditor
-- Responsive + raccourcis (N, Delete, D, ⌘+/−/0, C/V)
+```bash
+bash scripts/package-dist.sh
+```
 
-## API (session + CSRF)
+Produit `dist/oranotes-VERSION.zip` avec `vendor` (no-dev) et `public/build`, sans `.env` ni `node_modules`.
 
-Préfixe `/api/…` (middleware web authentifié), identifiants publics = **UUID** (pas d’IDs internes dans les URLs).
+## Promo & docs
 
-Exemples : `POST /api/workspaces/{uuid}/notes`, `PATCH /api/workspaces/{uuid}/positions`, `GET /api/search?q=`, `POST /api/uploads`.
+- [Doc/](Doc/index.html) — HTML d’installation
+- [promo/](promo/README.md) — visuels marketplace / social / branding (originaux)
+- [CHANGELOG.md](CHANGELOG.md)
 
-Lien public : `/s/{token}`.
+## Roadmap
 
-## Déploiement
-
-1. PHP 8.3, Composer, Node pour le build d’assets
-2. `composer install --no-dev --optimize-autoloader`
-3. `npm ci && npm run build`
-4. `.env` production (`APP_DEBUG=false`, `APP_URL`, MySQL, `FILESYSTEM_DISK=public`)
-5. `php artisan migrate --force`
-6. `php artisan storage:link`
-7. `php artisan config:cache && php artisan route:cache`
-8. Document root = `public/`
+Reverb lorsque Guzzle PSR-7 le permet ; CSP enforce après rapport ; rollback update plus large.
 
 ## Licence
 

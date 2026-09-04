@@ -11,6 +11,7 @@ defineEmits(['pointerdown', 'resize', 'dblclick', 'context']);
 <template>
     <div
         class="sticky-note absolute select-none overflow-hidden rounded-sm"
+        :data-testid="'sticky-' + (note.title || 'untitled')"
         :class="[`sticky-${note.color}`, selected ? 'ring-2 ring-orange-600' : '', highlight ? 'ring-2 ring-sky-500' : '']"
         :style="{
             left: `${note.x}px`,

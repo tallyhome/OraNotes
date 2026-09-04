@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cPanel — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>cPanel / shared hosting</h1>
+<p>Compatible seulement si l’hébergeur offre <strong>PHP 8.3+</strong>, Composer (ou vendor déjà livré), et un document root personnalisable vers <code>public/</code>.</p>
+<h2>Étapes typiques</h2>
+<ol>
+  <li>Fichiers → déposer le paquet (sans <code>.env</code> secret).</li>
+  <li>Domaines → racine du domaine = <code>…/oranotes/public</code>.</li>
+  <li>PHP Selector → 8.3, extensions mbstring, xml, curl, zip, gd, intl, pdo.</li>
+  <li>MySQL Databases → créer base + user, puis wizard <code>/install</code>.</li>
+</ol>
+<p>Si cPanel refuse de pointer hors <code>public_html</code> : déplacez le contenu de <code>public/</code> dans <code>public_html</code> et remontez <code>index.php</code> :</p>
+<pre>require __DIR__.'/../bootstrap/app.php';</pre>
+<p>devient, si l’app est un niveau au-dessus de public_html :</p>
+<pre>require __DIR__.'/../oranotes/bootstrap/app.php';</pre>
+<div class="note">Nous ne contournons pas <code>disable_functions</code> (ex. <code>proc_open</code>, <code>putenv</code>). Si Composer ne peut pas tourner sur l’hébergeur, uploadez un build déjà empaqueté (<code>scripts/package-dist.sh</code>).</div>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

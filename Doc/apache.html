@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apache — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Apache 2.4</h1>
+<p>Document root <strong>obligatoire</strong> : le dossier <code>public/</code>, jamais la racine du dépôt.</p>
+<p>Fichier d’exemple : <code>scripts/apache-vhost.conf</code>.</p>
+<pre>&lt;VirtualHost *:80&gt;
+    ServerName notes.example.test
+    DocumentRoot /var/www/oranotes/public
+    &lt;Directory /var/www/oranotes/public&gt;
+        AllowOverride All
+        Require all granted
+    &lt;/Directory&gt;
+    ErrorLog ${APACHE_LOG_DIR}/oranotes-error.log
+    CustomLog ${APACHE_LOG_DIR}/oranotes-access.log combined
+&lt;/VirtualHost&gt;</pre>
+<h2>Modules</h2>
+<pre>sudo a2enmod rewrite headers
+sudo apache2ctl configtest
+sudo systemctl reload apache2</pre>
+<p><code>public/.htaccess</code> Laravel doit rester en place. Sans <code>AllowOverride All</code>, les URLs Inertia cassent (404 hors <code>/</code>).</p>
+<div class="note">HTTPS : terminez TLS en amont (Let’s Encrypt). En production <code>APP_URL</code> doit être <code>https://…</code>.</div>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

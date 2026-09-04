@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linux — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Linux (Debian / Ubuntu / RHEL)</h1>
+<h2>Paquets PHP 8.3</h2>
+<pre>sudo apt update
+sudo apt install php8.3 php8.3-cli php8.3-fpm php8.3-mbstring php8.3-xml php8.3-curl \
+  php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl php8.3-sqlite3 php8.3-mysql unzip
+php -v
+php -m | grep -E 'mbstring|xml|curl|zip|gd|bcmath|intl|pdo'</pre>
+<p>Sur RHEL/Alma : <code>dnf install php php-mbstring php-xml php-mysqlnd php-gd php-intl php-zip</code>.</p>
+<h2>Droits d’écriture</h2>
+<p>L’utilisateur du serveur web (souvent <code>www-data</code> ou <code>nginx</code>) doit écrire :</p>
+<ul>
+  <li><code>storage/</code> et sous-dossiers</li>
+  <li><code>bootstrap/cache/</code></li>
+</ul>
+<pre>sudo chown -R www-data:www-data storage bootstrap/cache
+sudo find storage bootstrap/cache -type d -exec chmod 775 {} \;
+sudo find storage bootstrap/cache -type f -exec chmod 664 {} \;</pre>
+<div class="note">Si le wizard refuse l’install, relisez les chemins exacts affichés : OraNotes ne contourne pas un hébergeur qui interdit <code>chmod</code> ou <code>putenv</code>.</div>
+<h2>Composer (sans Node en prod)</h2>
+<pre>composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache &amp;&amp; php artisan route:cache</pre>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

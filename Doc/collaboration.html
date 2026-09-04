@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collaboration — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Collaboration temps réel</h1>
+<p>Les nœuds texte OraEditor sont fusionnés avec <strong>Yjs</strong> (CRDT). Le transport est <strong>SSE + POST</strong> d’updates, autorisé par Policy <code>view</code>/<code>update</code> avant toute souscription. Ce n’est pas un polling du document JSON, ni du last-write-wins silencieux.</p>
+<p>Laravel Reverb n’est pas livré : conflit Guzzle PSR-7 v3. Le même modèle CRDT pourra passer sur WebSocket plus tard.</p>
+<ul>
+  <li>Lecture : état + présence, pas d’updates.</li>
+  <li>Édition : POST updates + snapshot périodique (~4 s).</li>
+  <li>Révocation mid-session : événement SSE <code>revoked</code>.</li>
+  <li>Hors-ligne : brouillon localStorage + indicateur, resync à la reconnexion.</li>
+</ul>
+<p>Détail : <a href="../docs/collaboration.md">docs/collaboration.md</a>.</p>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

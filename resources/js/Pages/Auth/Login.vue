@@ -88,6 +88,7 @@ const submit = () => {
                 </Link>
 
                 <PrimaryButton
+                    data-testid="login-submit"
                     class="ms-4"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"

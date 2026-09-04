@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mises à jour — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Mises à jour officielles</h1>
+<p>Source unique : API GitHub Releases du dépôt configuré (<code>ORANOTES_UPDATE_REPO</code>, défaut <code>tallyhome/OraNotes</code>). <strong>Jamais</strong> une URL arbitraire téléchargée puis exécutée.</p>
+<ol>
+  <li>Admin → Mises à jour : version courante / disponible / changelog.</li>
+  <li>Contrôles : PHP, extensions, disque, permissions, version minimale.</li>
+  <li>Téléchargement de l’artefact de release + vérification d’intégrité (hash).</li>
+  <li>Backup fichiers clés + SQLite si utilisé + enregistrement de version.</li>
+  <li>Mode maintenance, overlay du code (hors <code>.env</code>, <code>storage</code>, <code>node_modules</code>), migrations, caches.</li>
+  <li>Échec : tentative de restauration, sortie de maintenance, logs précis. <strong>Le rollback n’est pas atomique.</strong></li>
+</ol>
+<p>Protections : refus de downgrade, traversal <code>..</code>, écriture hors projet, SSRF (hôte figé <code>api.github.com</code>).</p>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

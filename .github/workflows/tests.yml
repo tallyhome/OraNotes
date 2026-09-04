@@ -24,3 +24,28 @@ jobs:
       - run: cp .env.example .env
       - run: php artisan key:generate
       - run: php artisan test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, sqlite, xml, ctype, json, tokenizer, gd, zip, intl, bcmath
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+      - run: touch database/database.sqlite
+      - run: php artisan migrate --seed --force --no-interaction
+      - run: npm run e2e
+        env:
+          E2E_BASE_URL: http://localhost:8000
+          APP_URL: http://localhost:8000

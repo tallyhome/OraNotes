@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 160" role="img" aria-label="OraNotes">
+  <title>OraNotes</title>
+  <rect width="512" height="160" fill="none"/>
+  <g transform="translate(16,24)">
+    <rect x="8" y="16" width="96" height="96" rx="10" fill="#F59E0B"/>
+    <path d="M8 40 L40 16 H104 A10 10 0 0 1 104 26 L40 50 Z" fill="#EA580C"/>
+    <circle cx="56" cy="68" r="18" fill="#FFF7ED"/>
+    <circle cx="56" cy="68" r="8" fill="#1C1917"/>
+  </g>
+  <text x="140" y="100" font-family="Georgia, 'Times New Roman', serif" font-size="64" fill="#1C1917">OraNotes</text>
+</svg>

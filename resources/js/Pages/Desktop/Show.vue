@@ -160,15 +160,19 @@ function createWorkspace() {
     <AppLayout>
         <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div>
-                <h1 class="text-xl font-semibold">{{ workspace.icon }} {{ workspace.name }}</h1>
+                <h1 class="text-xl font-semibold">
+                    {{ workspace.icon }} {{ workspace.name }}
+                    <span v-if="workspace.is_locked" data-testid="workspace-locked" title="Bureau verrouillé">🔒</span>
+                </h1>
                 <p class="text-xs text-stone-500">{{ notes.length }} notes · zoom {{ Math.round((canvas?.camera.zoom || 1) * 100) }}%</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-sm">
-                <button v-if="canEdit" class="rounded-full bg-orange-600 px-3 py-1.5 text-white" @click="canvas.createNote()">+ Note (N)</button>
+                <button v-if="canEdit" data-testid="create-note" class="rounded-full bg-orange-600 px-3 py-1.5 text-white" @click="canvas.createNote()">+ Note (N)</button>
                 <button class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="canvas.fitAll()">Tout voir</button>
                 <button class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="canvas.resetZoom()">100%</button>
                 <button
                     type="button"
+                    data-testid="toggle-grid"
                     class="rounded-full border px-3 py-1.5 dark:border-stone-700"
                     :class="canvas?.gridOn ? 'bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-100' : ''"
                     :aria-pressed="!!canvas?.gridOn"
@@ -177,7 +181,7 @@ function createWorkspace() {
                     Grille
                 </button>
                 <button v-if="canManage && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="shareOpen = !shareOpen; settingsOpen = false">Partager</button>
-                <button v-if="isOwner && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="settingsOpen = !settingsOpen; shareOpen = false">Bureau</button>
+                <button v-if="isOwner && !publicShare" data-testid="workspace-settings" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="settingsOpen = !settingsOpen; shareOpen = false">Bureau</button>
                 <button v-if="canEdit && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="createWorkspace">Nouveau bureau</button>
             </div>
         </div>
@@ -187,7 +191,7 @@ function createWorkspace() {
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.patchSelected({ is_favorite: true })">Favori</button>
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.patchSelected({ is_archived: true })">Archiver</button>
             <div class="relative">
-                <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="alignOpen = !alignOpen">Aligner ▾</button>
+                <button data-testid="align-menu" class="rounded-full border px-2 py-1 dark:border-stone-700" @click="alignOpen = !alignOpen">Aligner ▾</button>
                 <div v-if="alignOpen" class="absolute left-0 z-30 mt-1 w-52 rounded-xl border bg-white py-1 text-xs shadow-lg dark:border-stone-700 dark:bg-stone-900">
                     <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('left'); alignOpen = false">Gauche</button>
                     <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('centerH'); alignOpen = false">Centre horizontal</button>
@@ -246,7 +250,7 @@ function createWorkspace() {
             </div>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
                 <button class="rounded-full border px-3 py-1" @click="duplicateWorkspace">Dupliquer</button>
-                <button class="rounded-full border px-3 py-1" @click="toggleLock">{{ workspace.is_locked ? 'Déverrouiller' : 'Verrouiller' }}</button>
+                <button data-testid="toggle-lock" class="rounded-full border px-3 py-1" @click="toggleLock">{{ workspace.is_locked ? 'Déverrouiller' : 'Verrouiller' }}</button>
                 <button class="rounded-full border px-3 py-1" @click="archiveWorkspace">Archiver</button>
                 <button class="rounded-full border border-red-300 px-3 py-1 text-red-600" @click="deleteWorkspace">Supprimer</button>
             </div>

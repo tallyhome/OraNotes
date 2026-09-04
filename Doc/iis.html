@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IIS — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>IIS (Windows Server)</h1>
+<p>OraNotes fonctionne sur IIS <strong>si</strong> PHP 8.3 via FastCGI est installé (Web Platform Installer / phpmanager). Sans FastCGI, l’install n’est <strong>pas</strong> supportée.</p>
+<ol>
+  <li>Site IIS → Chemin physique = dossier <code>public</code>.</li>
+  <li>Handler Mapping → FastCGI <code>*.php</code> → <code>C:\php\php-cgi.exe</code> (chemin réel de votre PHP).</li>
+  <li>URL Rewrite : importer les règles de <code>public/web.config</code> Laravel, ou copier <code>scripts/iis-web.config</code> vers <code>public/web.config</code>.</li>
+  <li>Permissions IIS_IUSRS sur <code>storage</code> et <code>bootstrap\cache</code>.</li>
+</ol>
+<div class="note">L’assistant web détecte IIS via les en-têtes serveur. Il n’écrit pas dans le Gestionnaire IIS : vous devez créer le site vous-même.</div>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

@@ -482,6 +482,7 @@ defineExpose({
 <template>
     <div
         ref="viewport"
+        data-testid="canvas-viewport"
         class="relative h-[calc(100vh-7.5rem)] touch-none overflow-hidden bg-paper-100 dark:bg-stone-900"
         :class="{ 'canvas-grid': gridOn }"
         :style="gridStyle"

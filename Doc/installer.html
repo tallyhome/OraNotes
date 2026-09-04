@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assistant web — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Assistant d’installation <code>/install</code></h1>
+<ol>
+  <li>Bienvenue / licence MIT</li>
+  <li>Contrôles : PHP, zip, mbstring, XML, cURL, GD, BCMath, Intl, PDO, disque, droits</li>
+  <li>Base : driver, hôte, port, nom, user, mot de passe — test de connexion réel</li>
+  <li>Application : nom, URL, env, fuseau, locale, mail, filesystem</li>
+  <li>Compte admin (mot de passe fort)</li>
+  <li>Install : <code>APP_KEY</code>, migrations, storage:link, caches</li>
+  <li>Terminé : URL, accès admin, recommandations HTTPS / <code>APP_DEBUG=false</code></li>
+</ol>
+<h2>Sécurité</h2>
+<ul>
+  <li>Après succès : fichier <code>storage/app/installed.lock</code>.</li>
+  <li>Si <code>APP_KEY</code> existe déjà <strong>et</strong> la table <code>users</code> est là, le wizard est refusé (pas de réinstall furtive).</li>
+  <li>En <code>APP_ENV=testing</code> le wizard est considéré déjà installé.</li>
+  <li>Aucune secret n’est renvoyé dans les pages « terminé ».</li>
+</ul>
+<p>Réouvrir le wizard : procédure explicite — supprimer <code>installed.lock</code> <em>et</em> comprendre que vous réinitialisez une instance. Ce n’est pas un bouton dans l’UI.</p>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

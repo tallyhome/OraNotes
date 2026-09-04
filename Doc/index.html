@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Installer et exploiter OraNotes</h1>
+<p>OraNotes est une application Laravel 13 + Vue/Inertia : un bureau virtuel de notes OraEditor.</p>
+<div class="note">En production, <strong>Node n’est pas requis à l’exécution</strong> si les assets sont déjà compilés (<code>public/build</code> dans le paquet distributable). Node sert uniquement au build.</div>
+<figure class="schema">
+<pre>Navigateur  →  public/ (Vite + OraEditor)
+                 ↓
+              Laravel 13 (Policies, AccessService)
+                 ↓
+         SQLite | MySQL | MariaDB
+                 ↓
+     Collab : Yjs clients + SSE autorisé</pre>
+<figcaption>Schéma — flux de requête OraNotes 1.1.0</figcaption>
+</figure>
+<h2>Parcours recommandé</h2>
+<ol>
+  <li>Vérifier PHP 8.3+ et les extensions (voir Linux / Windows).</li>
+  <li>Soit l’<a href="installer.html">assistant web</a> <code>/install</code>, soit Composer + Artisan.</li>
+  <li>Pointer le vhost vers <code>public/</code> (Apache, Nginx, IIS, panneau).</li>
+  <li>Créer un admin : <code>php artisan oranotes:create-admin …</code> ou via le wizard.</li>
+</ol>
+<h2>Liens</h2>
+<ul>
+  <li>Code : <a href="https://github.com/tallyhome/OraNotes">github.com/tallyhome/OraNotes</a></li>
+  <li>Promo : <a href="../promo/README.md">../promo/</a></li>
+  <li>Architecture markdown : <a href="../docs/architecture.md">../docs/architecture.md</a></li>
+</ul>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

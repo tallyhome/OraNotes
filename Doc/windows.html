@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Windows — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Windows (IIS / XAMPP / PowerShell)</h1>
+<h2>PHP 8.3</h2>
+<ol>
+  <li>Installer PHP NTS x64 depuis windows.php.net, ou utiliser XAMPP <strong>uniquement si</strong> la version PHP ≥ 8.3.</li>
+  <li>Activer dans <code>C:\php\php.ini</code> (chemin réel : celui de <code>php --ini</code>) :</li>
+</ol>
+<pre>extension=mbstring
+extension=curl
+extension=openssl
+extension=fileinfo
+extension=gd
+extension=intl
+extension=pdo_mysql
+extension=pdo_sqlite
+extension=zip</pre>
+<h2>Vérification</h2>
+<pre>php -v
+php -m</pre>
+<p>Si une extension manque, l’assistant web le dira et <strong>n’affirmera pas</strong> que l’environnement est supporté.</p>
+<h2>Permissions</h2>
+<p>Dans l’Explorateur : clic droit <code>storage</code> et <code>bootstrap\cache</code> → Propriétés → Sécurité → IIS_IUSRS : Modifier.</p>
+<p>PowerShell (admin) :</p>
+<pre>icacls storage /grant IIS_IUSRS:(OI)(CI)M /T
+icacls bootstrap\cache /grant IIS_IUSRS:(OI)(CI)M /T</pre>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

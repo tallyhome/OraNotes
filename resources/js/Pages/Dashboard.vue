@@ -28,7 +28,7 @@ function createWorkspace() {
                     <p class="text-sm uppercase tracking-widest text-orange-700">Bureau</p>
                     <h1 class="text-3xl font-semibold">Vos espaces</h1>
                 </div>
-                <button class="rounded-full bg-orange-600 px-4 py-2 text-sm text-white" @click="createWorkspace">Nouveau bureau</button>
+                <button data-testid="create-workspace" class="rounded-full bg-orange-600 px-4 py-2 text-sm text-white" @click="createWorkspace">Nouveau bureau</button>
             </div>
 
             <section class="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -36,6 +36,7 @@ function createWorkspace() {
                     v-for="ws in workspaces"
                     :key="ws.id"
                     :href="`/workspaces/${ws.id}`"
+                    :data-testid="'workspace-card-' + ws.name"
                     class="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
                 >
                     <div class="text-2xl">{{ ws.icon }}</div>

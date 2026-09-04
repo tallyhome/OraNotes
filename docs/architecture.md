@@ -88,9 +88,11 @@ Les tests de sécurité vérifient qu’un utilisateur A ne peut jamais accéder
 - UI : `Saving…` / `Saved` / `Error`.
 - Échec réseau : brouillon `localStorage` (`oranotes:draft:{noteUuid}`), retry, jamais de perte silencieuse.
 
-## Temps réel (futur, pas V1)
+## Temps réel (1.1)
 
-Colonnes / events déjà pensés : `notes.updated_at`, versions optionnelles, activity log. Pas de WebSocket / CRDT en V1 pour préserver la stabilité.
+- **CRDT** Yjs côté clients (textes OraEditor). Pas de last-write-wins du JSON entier.
+- **Transport** SSE + POST d’updates, Policy avant souscription et à chaque cycle. Révocation → `event: revoked`.
+- Reverb / WebSocket : non livré (Guzzle PSR-7 v3). Voir `docs/collaboration.md`.
 
 ## Performance canvas
 

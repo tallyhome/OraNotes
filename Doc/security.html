@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sécurité — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Sécurité</h1>
+<ul>
+  <li>Policies + AccessService : UUID connus ≠ accès (archivé / corbeille / partage).</li>
+  <li>Comptes désactivés : login générique (anti-énumération), middleware <code>active</code>.</li>
+  <li>Uploads : MIME réel, taille, extension, hors exécutable.</li>
+  <li>CSP : Report-Only par défaut, sans <code>unsafe-eval</code> — voir <a href="../docs/csp.md">docs/csp.md</a>.</li>
+  <li>Journal admin : acteur, action, cible, IP/UA — jamais mots de passe / tokens.</li>
+  <li>Suppression comptes : <a href="../docs/user-deletion.md">docs/user-deletion.md</a>.</li>
+</ul>
+<p>Après install : <code>APP_DEBUG=false</code>, HTTPS, permissions <code>storage</code>, ne pas commiter <code>.env</code>.</p>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

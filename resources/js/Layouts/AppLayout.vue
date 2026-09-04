@@ -63,7 +63,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
 
             <div v-if="user" class="mt-4 border-t border-stone-200 pt-4 text-sm dark:border-stone-800">
                 <Link href="/profile" class="block rounded-lg px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800">Profil</Link>
-                <Link v-if="user?.is_admin" href="/admin" class="block rounded-lg px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800">Admin</Link>
+                <Link v-if="user?.is_admin" href="/admin" data-testid="nav-admin" class="block rounded-lg px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800">Admin</Link>
                 <Link href="/logout" method="post" as="button" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-stone-100 dark:hover:bg-stone-800">Déconnexion</Link>
             </div>
             <div v-else class="mt-4 border-t border-stone-200 pt-4 text-sm dark:border-stone-800">

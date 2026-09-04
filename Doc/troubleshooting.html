@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dépannage — OraNotes</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <a href="index.html"><strong>OraNotes</strong> · documentation</a>
+      <span class="muted">v1.1.0</span>
+    </header>
+    <nav class="toc"><a href="index.html">Accueil</a>
+<a href="linux.html">Linux</a>
+<a href="windows.html">Windows</a>
+<a href="apache.html">Apache</a>
+<a href="nginx.html">Nginx</a>
+<a href="iis.html">IIS</a>
+<a href="cpanel.html">cPanel</a>
+<a href="webuzo.html">Webuzo</a>
+<a href="plesk.html">Plesk</a>
+<a href="mysql.html">MySQL</a>
+<a href="mariadb.html">MariaDB</a>
+<a href="installer.html">Assistant web</a>
+<a href="updates.html">Mises à jour</a>
+<a href="collaboration.html">Collaboration</a>
+<a href="security.html">Sécurité</a>
+<a href="troubleshooting.html">Dépannage</a></nav>
+    
+<h1>Dépannage</h1>
+<table>
+  <tr><th>Symptôme</th><th>Cause fréquente</th><th>Action</th></tr>
+  <tr><td>404 sur toutes les routes sauf /</td><td>Document root ≠ public/ ou rewrite off</td><td>Apache AllowOverride / Nginx try_files</td></tr>
+  <tr><td>500 après install</td><td>storage non inscriptible</td><td>chown www-data storage bootstrap/cache</td></tr>
+  <tr><td>Vite manifest missing</td><td>Assets non buildés</td><td><code>npm ci &amp;&amp; npm run build</code> ou paquet dist</td></tr>
+  <tr><td>Wizard inaccessible</td><td>Déjà installé</td><td>Normal si installed.lock + users</td></tr>
+  <tr><td>Collab figé derrière Nginx</td><td>Buffering SSE</td><td>X-Accel-Buffering, proxy_buffering off</td></tr>
+  <tr><td>Mise à jour refusée</td><td>URL non officielle / downgrade / disque</td><td>Lire le message admin, logs laravel.log</td></tr>
+  <tr><td>Note invisible via UUID</td><td>Archivée / trash / pas de droit</td><td>Comportement voulu depuis 1.0.4-hardening</td></tr>
+</table>
+<p>Logs : <code>storage/logs/laravel.log</code>. Santé : <code>/admin/health</code>.</p>
+
+    <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
+  </div>
+</body>
+</html>

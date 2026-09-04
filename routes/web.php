@@ -33,6 +33,10 @@ Route::get('/s/{token}', PublicShareController::class)
     ->middleware('throttle:30,1')
     ->name('shares.public');
 
+Route::get('/a/{attachment}', [AttachmentController::class, 'show'])
+    ->middleware('throttle:60,1')
+    ->name('attachments.show');
+
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/favorites', FavoriteController::class)->name('favorites');

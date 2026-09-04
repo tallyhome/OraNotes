@@ -17,11 +17,9 @@ use Illuminate\Notifications\Notifiable;
     'name',
     'email',
     'password',
-    'role',
     'avatar_path',
     'theme',
     'locale',
-    'is_active',
     'preferences',
 ])]
 #[Hidden(['password', 'remember_token'])]

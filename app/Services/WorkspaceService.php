@@ -60,6 +60,10 @@ class WorkspaceService
      */
     public function update(Workspace $workspace, User $user, array $data): Workspace
     {
+        if (! $workspace->isOwnedBy($user)) {
+            unset($data['is_default'], $data['is_template'], $data['is_archived']);
+        }
+
         if (! empty($data['is_default'])) {
             Workspace::query()->where('user_id', $workspace->user_id)->update(['is_default' => false]);
         }

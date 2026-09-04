@@ -28,8 +28,8 @@ class NotePositionsRequest extends FormRequest
             'positions.*.y' => ['required', 'numeric'],
             'positions.*.width' => ['sometimes', 'numeric', 'min:140', 'max:1200'],
             'positions.*.height' => ['sometimes', 'numeric', 'min:120', 'max:1200'],
-            'positions.*.z_index' => ['sometimes', 'integer', 'min:0'],
-            'positions.*.rotation' => ['sometimes', 'numeric'],
+            'positions.*.z_index' => ['sometimes', 'integer', 'min:0', 'max:100000'],
+            'positions.*.rotation' => ['sometimes', 'numeric', 'min:-30', 'max:30'],
         ];
     }
 }

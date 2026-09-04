@@ -6,7 +6,6 @@ use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['user_id', 'note_id', 'disk', 'path', 'original_name', 'mime', 'size'])]
 class Attachment extends Model
@@ -25,6 +24,6 @@ class Attachment extends Model
 
     public function publicUrl(): string
     {
-        return Storage::disk($this->disk)->url($this->path);
+        return route('attachments.show', $this);
     }
 }

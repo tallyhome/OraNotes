@@ -38,7 +38,8 @@ class ShareController extends Controller
     public function storeNoteShare(ShareUserRequest $request, Note $note): JsonResponse
     {
         $this->authorize('share', $note);
-        $target = User::query()->where('email', $request->validated('email'))->firstOrFail();
+        $target = User::query()->where('email', $request->validated('email'))->first();
+        abort_unless($target, 422, 'Impossible de partager avec cet utilisateur.');
         abort_if($target->is($request->user()), 422, 'Impossible de se partager une note à soi-même.');
 
         $this->sharing->shareNoteWithUser(
@@ -62,7 +63,9 @@ class ShareController extends Controller
     public function storeWorkspaceMember(ShareUserRequest $request, Workspace $workspace): JsonResponse
     {
         $this->authorize('manageMembers', $workspace);
-        $target = User::query()->where('email', $request->validated('email'))->firstOrFail();
+        $target = User::query()->where('email', $request->validated('email'))->first();
+        abort_unless($target, 422, 'Impossible de partager avec cet utilisateur.');
+        abort_if($target->is($request->user()), 422, 'Impossible de se partager un bureau à soi-même.');
         $this->workspaces->addMember(
             $workspace,
             $request->user(),

@@ -78,6 +78,9 @@ class NoteController extends Controller
     public function duplicate(Request $request, Note $note): JsonResponse
     {
         $this->authorize('update', $note);
+        $note->loadMissing('workspace');
+        abort_unless($note->workspace, 404);
+        $this->authorize('create', [Note::class, $note->workspace]);
         $copy = $this->notes->duplicate($note, $request->user());
 
         return response()->json(['note' => NoteResource::makeArray($copy, includeDocument: true)], 201);

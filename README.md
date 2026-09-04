@@ -2,7 +2,7 @@
 
 Application web de prise de notes **spatiale** : un bureau virtuel de Post-it. Chaque note est un document [OraEditor](https://github.com/tallyhome/OraEditor) complet.
 
-> Version : **1.0.1**
+> Version : **1.0.2**
 
 ## À propos
 

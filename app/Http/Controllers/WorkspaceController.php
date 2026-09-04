@@ -35,7 +35,10 @@ class WorkspaceController extends Controller
             ->values();
 
         return Inertia::render('Desktop/Show', [
-            'workspace' => WorkspaceResource::makeArray($workspace, includeMembers: true),
+            'workspace' => WorkspaceResource::makeArray(
+                $workspace,
+                includeMembers: $user ? ($workspace->isOwnedBy($user) || $workspace->memberPermission($user) !== null) : false,
+            ),
             'notes' => $notes->map(fn ($note) => NoteResource::makeArray($note))->values(),
             'canEdit' => $user?->can('update', $workspace) ?? false,
             'canManage' => $canManage,

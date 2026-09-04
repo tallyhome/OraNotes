@@ -19,7 +19,7 @@ class CreateAdminCommand extends Command
         $email = (string) $this->argument('email');
 
         $user = User::query()->firstOrNew(['email' => $email]);
-        $user->fill([
+        $user->forceFill([
             'name' => (string) $this->argument('name'),
             'password' => Hash::make((string) $this->option('password')),
             'role' => UserRole::Admin,

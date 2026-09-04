@@ -26,6 +26,7 @@ class SearchService
 
         $workspaces = Workspace::query()
             ->visibleTo($user)
+            ->where('is_archived', false)
             ->where(function ($q) use ($like) {
                 $q->where('name', 'like', $like)
                     ->orWhere('description', 'like', $like);
@@ -35,6 +36,8 @@ class SearchService
 
         $notes = Note::query()
             ->with(['workspace', 'tags', 'author'])
+            ->where('is_archived', false)
+            ->whereHas('workspace', fn ($w) => $w->where('is_archived', false))
             ->where(function ($q) use ($user) {
                 $q->whereHas('workspace', fn ($w) => $w->visibleTo($user))
                     ->orWhereHas('shares', fn ($s) => $s->where('user_id', $user->id));

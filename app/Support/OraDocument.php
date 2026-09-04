@@ -32,6 +32,50 @@ final class OraDocument
     public const MAX_TEXT_CHARS = 200_000;
 
     /**
+     * OraEditor 0.1.3 Document Model node types.
+     *
+     * @var list<string>
+     */
+    public const NODE_TYPES = [
+        'doc',
+        'paragraph',
+        'heading',
+        'blockquote',
+        'codeBlock',
+        'listItem',
+        'text',
+        'image',
+        'video',
+        'audio',
+        'embed',
+        'file',
+        'table',
+        'tableRow',
+        'tableCell',
+        'hardBreak',
+        'horizontalRule',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    public const MARK_TYPES = [
+        'bold',
+        'italic',
+        'underline',
+        'strike',
+        'code',
+        'subscript',
+        'superscript',
+        'link',
+        'mention',
+        'textColor',
+        'highlight',
+        'fontFamily',
+        'fontSize',
+    ];
+
+    /**
      * @param  array<string, mixed>|null  $document
      */
     public static function isValid(?array $document): bool
@@ -40,9 +84,21 @@ final class OraDocument
             return false;
         }
 
+        $version = $document['version'] ?? null;
+        if (! is_int($version) && ! (is_numeric($version) && (int) $version == $version)) {
+            return false;
+        }
+
+        $version = (int) $version;
+        if ($version < 1 || $version > 2) {
+            return false;
+        }
+
+        $content = $document['content'] ?? null;
+
         return ($document['type'] ?? null) === 'doc'
-            && isset($document['version'])
-            && is_array($document['content'] ?? null);
+            && is_array($content)
+            && array_is_list($content);
     }
 
     /**
@@ -72,7 +128,19 @@ final class OraDocument
             return 'Document trop volumineux.';
         }
 
-        return null;
+        return self::schemaError($document);
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     */
+    public static function schemaError(array $document): ?string
+    {
+        if (! self::isValid($document)) {
+            return 'Document OraEditor invalide.';
+        }
+
+        return self::nodeSchemaError($document, 0);
     }
 
     /**
@@ -118,26 +186,121 @@ final class OraDocument
         }
 
         if (isset($node['marks']) && is_array($node['marks'])) {
-            $node['marks'] = array_values(array_map(function ($mark) {
-                if (! is_array($mark)) {
-                    return $mark;
+            $node['marks'] = array_values(array_filter(array_map(function ($mark) {
+                if (! is_array($mark) || ! is_string($mark['type'] ?? null)) {
+                    return null;
+                }
+                if (! in_array($mark['type'], self::MARK_TYPES, true)) {
+                    return null;
                 }
                 if (isset($mark['attrs']) && is_array($mark['attrs'])) {
                     $mark['attrs'] = self::sanitizeAttrs($mark['attrs']);
+                } elseif (isset($mark['attrs'])) {
+                    unset($mark['attrs']);
                 }
 
                 return $mark;
-            }, $node['marks']));
+            }, $node['marks'])));
+        }
+
+        if (($node['type'] ?? null) === 'text') {
+            $node['text'] = isset($node['text']) && is_string($node['text']) ? $node['text'] : '';
+            unset($node['content']);
         }
 
         if (isset($node['content']) && is_array($node['content'])) {
-            $node['content'] = array_map(
-                fn ($child) => is_array($child) ? self::sanitizeNode($child, $depth + 1) : $child,
-                $node['content']
-            );
+            $node['content'] = array_values(array_filter(
+                array_map(
+                    function ($child) use ($depth) {
+                        if (! is_array($child)) {
+                            return null;
+                        }
+
+                        $type = $child['type'] ?? null;
+                        if (! is_string($type) || ! in_array($type, self::NODE_TYPES, true)) {
+                            return null;
+                        }
+
+                        return self::sanitizeNode($child, $depth + 1);
+                    },
+                    $node['content']
+                )
+            ));
         }
 
         return $node;
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    private static function nodeSchemaError(array $node, int $depth): ?string
+    {
+        if ($depth > self::MAX_DEPTH) {
+            return 'Document trop profondément imbriqué.';
+        }
+
+        $type = $node['type'] ?? null;
+        if (! is_string($type) || $type === '' || strlen($type) > 40) {
+            return 'Nœud OraEditor sans type valide.';
+        }
+
+        if (! in_array($type, self::NODE_TYPES, true)) {
+            return 'Type de nœud OraEditor inattendu.';
+        }
+
+        if ($type === 'text') {
+            $text = $node['text'] ?? '';
+            if (! is_string($text) && $text !== null) {
+                return 'Nœud texte malformé.';
+            }
+            if (array_key_exists('content', $node)) {
+                return 'Nœud texte malformé.';
+            }
+        }
+
+        if (isset($node['marks'])) {
+            if (! is_array($node['marks']) || ! array_is_list($node['marks'])) {
+                return 'Marques OraEditor malformées.';
+            }
+
+            foreach ($node['marks'] as $mark) {
+                if (! is_array($mark) || ! is_string($mark['type'] ?? null)) {
+                    return 'Marques OraEditor malformées.';
+                }
+                if (! in_array($mark['type'], self::MARK_TYPES, true)) {
+                    return 'Marque OraEditor inattendue.';
+                }
+                if (isset($mark['attrs']) && ! is_array($mark['attrs'])) {
+                    return 'Marques OraEditor malformées.';
+                }
+            }
+        }
+
+        if (isset($node['attrs']) && ! is_array($node['attrs'])) {
+            return 'Attributs de nœud malformés.';
+        }
+
+        if (! array_key_exists('content', $node)) {
+            return null;
+        }
+
+        if (! is_array($node['content']) || ! array_is_list($node['content'])) {
+            return 'Structure de document malformée.';
+        }
+
+        foreach ($node['content'] as $child) {
+            if (! is_array($child)) {
+                return 'Structure de document malformée.';
+            }
+
+            $error = self::nodeSchemaError($child, $depth + 1);
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
+        return null;
     }
 
     /**

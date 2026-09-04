@@ -26,7 +26,8 @@ class DashboardController extends Controller
 
         $recentNotes = Note::query()
             ->with(['workspace', 'tags', 'author'])
-            ->whereHas('workspace', fn ($q) => $q->visibleTo($user))
+            ->where('is_archived', false)
+            ->whereHas('workspace', fn ($q) => $q->visibleTo($user)->where('is_archived', false))
             ->latest('updated_at')
             ->limit(8)
             ->get();
@@ -35,13 +36,17 @@ class DashboardController extends Controller
             ->with(['workspace', 'tags', 'author'])
             ->where('user_id', $user->id)
             ->where('is_favorite', true)
+            ->where('is_archived', false)
+            ->whereHas('workspace', fn ($q) => $q->where('is_archived', false))
             ->latest('updated_at')
             ->limit(8)
             ->get();
 
         $shared = Note::query()
             ->with(['workspace', 'tags', 'author'])
+            ->where('is_archived', false)
             ->whereHas('shares', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('workspace', fn ($q) => $q->where('is_archived', false))
             ->latest('updated_at')
             ->limit(8)
             ->get();

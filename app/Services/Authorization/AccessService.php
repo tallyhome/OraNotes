@@ -22,18 +22,35 @@ class AccessService
 
     public function canAccessWorkspacePage(User $user, Workspace $workspace): bool
     {
+        if ($workspace->trashed()) {
+            return $workspace->isOwnedBy($user);
+        }
+
         if ($this->canViewWorkspace($user, $workspace)) {
             return true;
         }
 
+        if ($workspace->is_archived) {
+            return false;
+        }
+
         return Note::query()
             ->where('workspace_id', $workspace->id)
+            ->where('is_archived', false)
             ->whereHas('shares', fn ($q) => $q->where('user_id', $user->id))
             ->exists();
     }
 
     public function canViewWorkspace(User $user, Workspace $workspace): bool
     {
+        if ($workspace->trashed()) {
+            return $workspace->isOwnedBy($user);
+        }
+
+        if ($workspace->is_archived) {
+            return $workspace->isOwnedBy($user);
+        }
+
         return $this->workspacePermission($user, $workspace) !== null;
     }
 
@@ -66,12 +83,59 @@ class AccessService
 
     public function canViewNote(User $user, Note $note): bool
     {
+        if ($note->trashed()) {
+            return false;
+        }
+
+        $note->loadMissing('workspace');
+
+        if ($note->workspace?->trashed() || $note->workspace?->is_archived) {
+            return $this->canManageHiddenNote($user, $note);
+        }
+
+        if ($note->is_archived) {
+            return $this->canManageHiddenNote($user, $note);
+        }
+
         return $this->notePermission($user, $note) !== null;
     }
 
     public function canEditNote(User $user, Note $note): bool
     {
+        if ($note->trashed()) {
+            return false;
+        }
+
+        $note->loadMissing('workspace');
+
+        if ($note->workspace?->trashed()) {
+            return false;
+        }
+
+        if ($note->is_archived || $note->workspace?->is_archived) {
+            return $this->canManageHiddenNote($user, $note);
+        }
+
         return $this->notePermission($user, $note) === SharePermission::Edit;
+    }
+
+    /**
+     * Archived / hidden notes: author, workspace owner or workspace editor only.
+     * Knowing a UUID or holding a former share is not enough.
+     */
+    public function canManageHiddenNote(User $user, Note $note): bool
+    {
+        $note->loadMissing('workspace');
+
+        if ((int) $note->user_id === (int) $user->id) {
+            return true;
+        }
+
+        if ($note->workspace?->isOwnedBy($user)) {
+            return true;
+        }
+
+        return $note->workspace !== null && $this->canEditWorkspace($user, $note->workspace);
     }
 
     /**
@@ -111,12 +175,18 @@ class AccessService
 
         $links = ShareLink::query()->whereIn('token', $tokens)->get();
 
+        $note->loadMissing('workspace');
+
         foreach ($links as $link) {
             if (! $link->isUsable()) {
                 continue;
             }
 
             $shareable = $link->shareable;
+            if ($note->trashed() || $note->is_archived || $note->workspace?->trashed() || $note->workspace?->is_archived) {
+                continue;
+            }
+
             if ($shareable instanceof Note && (int) $shareable->id === (int) $note->id) {
                 return true;
             }
@@ -124,7 +194,6 @@ class AccessService
             if (
                 $shareable instanceof Workspace
                 && (int) $shareable->id === (int) $note->workspace_id
-                && ! $note->is_archived
             ) {
                 return true;
             }

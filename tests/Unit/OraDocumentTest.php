@@ -62,4 +62,63 @@ class OraDocumentTest extends TestCase
     {
         $this->assertNull(OraDocument::limitError(OraDocument::empty()));
     }
+
+    #[Test]
+    public function valid_heading_list_and_table_documents_are_accepted(): void
+    {
+        $doc = [
+            'version' => 1,
+            'type' => 'doc',
+            'content' => [
+                ['type' => 'heading', 'attrs' => ['level' => 2], 'content' => [['type' => 'text', 'text' => 'Titre', 'marks' => [['type' => 'bold']]]]],
+                ['type' => 'listItem', 'attrs' => ['level' => 0], 'content' => [['type' => 'text', 'text' => 'Tâche']]],
+                [
+                    'type' => 'table',
+                    'content' => [
+                        [
+                            'type' => 'tableRow',
+                            'content' => [
+                                ['type' => 'tableCell', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'A']]]]],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->assertTrue(OraDocument::isValid($doc));
+        $this->assertNull(OraDocument::limitError($doc));
+    }
+
+    #[Test]
+    public function unexpected_node_type_is_rejected(): void
+    {
+        $doc = OraDocument::empty();
+        $doc['content'][] = ['type' => 'script', 'content' => [['type' => 'text', 'text' => 'alert(1)']]];
+
+        $this->assertNotNull(OraDocument::limitError($doc));
+    }
+
+    #[Test]
+    public function associative_content_and_non_string_text_are_rejected(): void
+    {
+        $assoc = ['version' => 1, 'type' => 'doc', 'content' => ['oops' => ['type' => 'paragraph']]];
+        $this->assertFalse(OraDocument::isValid($assoc));
+
+        $badText = OraDocument::empty();
+        $badText['content'][0]['content'][0]['text'] = ['not', 'a', 'string'];
+        $this->assertNotNull(OraDocument::limitError($badText));
+    }
+
+    #[Test]
+    public function deeply_nested_document_is_rejected(): void
+    {
+        $node = ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'x']]];
+        for ($i = 0; $i < OraDocument::MAX_DEPTH + 2; $i++) {
+            $node = ['type' => 'blockquote', 'content' => [$node]];
+        }
+        $doc = ['version' => 1, 'type' => 'doc', 'content' => [$node]];
+
+        $this->assertNotNull(OraDocument::limitError($doc));
+    }
 }

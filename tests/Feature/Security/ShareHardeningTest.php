@@ -26,8 +26,12 @@ class ShareHardeningTest extends TestCase
                 'email' => 'nobody@example.test',
                 'permission' => SharePermission::Read->value,
             ])
-            ->assertStatus(422)
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonMissingPath('user')
             ->assertDontSee('exists', false);
+
+        $this->assertDatabaseMissing('note_shares', ['note_id' => $note->id]);
     }
 
     #[Test]

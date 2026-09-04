@@ -15,6 +15,8 @@ class FavoriteController extends Controller
         $notes = Note::query()
             ->with(['workspace', 'tags', 'author'])
             ->where('is_favorite', true)
+            ->where('is_archived', false)
+            ->whereHas('workspace', fn ($w) => $w->where('is_archived', false))
             ->where(function ($q) use ($request) {
                 $q->where('user_id', $request->user()->id)
                     ->orWhereHas('workspace', fn ($w) => $w->visibleTo($request->user()));

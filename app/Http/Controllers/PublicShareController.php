@@ -23,6 +23,15 @@ class PublicShareController extends Controller
         $shareable = $link->shareable;
         abort_unless($shareable, 404);
 
+        if ($shareable instanceof Note) {
+            abort_if($shareable->trashed() || $shareable->is_archived, 404);
+            abort_if($shareable->workspace?->trashed() || $shareable->workspace?->is_archived, 404);
+        }
+
+        if ($shareable instanceof Workspace) {
+            abort_if($shareable->trashed() || $shareable->is_archived, 404);
+        }
+
         $this->rememberShareToken($request, $token);
 
         if ($shareable instanceof Note) {

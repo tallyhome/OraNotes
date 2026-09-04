@@ -47,4 +47,19 @@ class OraDocumentTest extends TestCase
         $this->assertStringContainsString('ok', $clean);
         $this->assertStringNotContainsString('style', $clean);
     }
+
+    #[Test]
+    public function oversized_document_is_flagged(): void
+    {
+        $doc = OraDocument::empty();
+        $doc['content'][0]['content'][0]['text'] = str_repeat('A', OraDocument::MAX_JSON_BYTES);
+
+        $this->assertNotNull(OraDocument::limitError($doc));
+    }
+
+    #[Test]
+    public function empty_document_is_within_limits(): void
+    {
+        $this->assertNull(OraDocument::limitError(OraDocument::empty()));
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -87,9 +88,35 @@ class AttachmentUploadTest extends TestCase
         $id = $response->json('id');
         $this->assertIsString($id);
 
-        $this->get(route('attachments.show', $id))
+        $response = $this->actingAs($user)
+            ->get(route('attachments.show', $id))
             ->assertOk()
             ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    #[Test]
+    public function test_guest_cannot_download_attachment_by_url_alone(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $note = $this->noteFor($user);
+
+        $id = $this->actingAs($user)
+            ->post(route('api.uploads.store'), [
+                'note' => $note->uuid,
+                'file' => UploadedFile::fake()->image('secret.png', 12, 12),
+            ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->json('id');
+
+        Auth::logout();
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+
+        $this->get(route('attachments.show', $id))->assertNotFound();
     }
 
     private function noteFor(User $user): Note

@@ -8,9 +8,12 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Notifications\WorkspaceSharedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WorkspaceService
 {
+    public const MAX_MEMBERS = 50;
+
     public function __construct(
         private ActivityLogger $logger,
         private NoteService $notes,
@@ -111,6 +114,13 @@ class WorkspaceService
 
     public function addMember(Workspace $workspace, User $actor, User $member, SharePermission $permission): void
     {
+        $already = $workspace->members()->where('users.id', $member->id)->exists();
+        if (! $already && $workspace->members()->count() >= self::MAX_MEMBERS) {
+            throw ValidationException::withMessages([
+                'email' => 'Trop de membres sur ce bureau ('.self::MAX_MEMBERS.' max).',
+            ]);
+        }
+
         $workspace->members()->syncWithoutDetaching([
             $member->id => ['permission' => $permission->value],
         ]);

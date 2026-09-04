@@ -14,6 +14,7 @@ use App\Support\HtmlSanitizer;
 use App\Support\OraDocument;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class NoteService
 {
@@ -28,6 +29,10 @@ class NoteService
         $document = OraDocument::isValid($data['document'] ?? null)
             ? $data['document']
             : OraDocument::empty();
+
+        if ($error = OraDocument::limitError($document)) {
+            throw ValidationException::withMessages(['document' => $error]);
+        }
 
         $document = OraDocument::sanitize($document);
 
@@ -78,6 +83,9 @@ class NoteService
         $dirtyDocument = array_key_exists('document', $data) && OraDocument::isValid($data['document']);
 
         if ($dirtyDocument) {
+            if ($error = OraDocument::limitError($data['document'])) {
+                throw ValidationException::withMessages(['document' => $error]);
+            }
             $this->snapshot($note, $user);
             $data['document'] = OraDocument::sanitize($data['document']);
             $data['text_content'] = OraDocument::extractText($data['document']);
@@ -181,6 +189,7 @@ class NoteService
     public function syncTags(Note $note, User $user, array $names): void
     {
         $ids = [];
+        $names = array_slice($names, 0, 20);
         foreach ($names as $name) {
             $name = trim((string) $name);
             if ($name === '') {

@@ -1,40 +1,47 @@
 # OraNotes
 
-Application de prise de notes pour le bureau.
+Application web de prise de notes **spatiale** : un bureau virtuel de Post-it. Chaque note est un document [OraEditor](https://github.com/tallyhome/OraEditor) complet.
+
+> Version actuelle : **0.0.1** — scaffolding, analyse OraEditor, décision d’architecture.
 
 ## À propos
 
-OraNotes est un système de notes desktop conçu pour capturer, organiser et retrouver rapidement vos idées, listes et documents personnels.
+OraNotes n’est pas une liste de notes. L’organisation spatiale (position, taille, couleur, superposition) est l’expérience principale. Blend : bureau virtuel + tableau blanc + Post-it + notes modernes + partage.
 
-## Fonctionnalités (prévues)
+## Intégration OraEditor (décision)
 
-- Création et édition de notes
-- Organisation par dossiers ou étiquettes
-- Recherche rapide
-- Interface native desktop
-- Persistance locale des données
+OraEditor **0.1.3** est le moteur d’édition. On ne réinvente pas d’éditeur riche.
 
-## Stack technique
+- **Source de vérité :** Document Model JSON (`getJSON` / `setJSON`), pas le HTML.
+- **Méthode V1 :** vendoriser le kit officiel `ready/ora-editor/` (JS + CSS + manifest, rien à compiler). Les packages npm `@ora-editor/*` et Composer `ora/laravel` ne sont pas publiés.
+- **Hôte :** Vue 3 instancie `new OraEditor()` uniquement en mode édition ; les miniatures du bureau utilisent un aperçu HTML dérivé.
+- Détail : [docs/ora-editor-analysis.md](docs/ora-editor-analysis.md) · [docs/architecture.md](docs/architecture.md)
 
-À définir au fur et à mesure du développement.
+## Stack (retenue)
 
-## Installation
+- **Backend :** Laravel 12, PHP 8.3+, Policies, Form Requests
+- **Frontend :** Vue 3 + Inertia.js + Vite
+- **Base :** SQLite (local / tests) · MySQL / MariaDB (production)
+- **Éditeur :** OraEditor 0.1.3 (`ready/ora-editor/`)
 
-```bash
-git clone https://github.com/tallyhome/OraNotes.git
-cd OraNotes
-```
+## Feuille de route
 
-Les instructions d’installation détaillées seront ajoutées dès que le projet sera initialisé.
+| Tag | Objectif |
+|---|---|
+| v0.0.1 | Scaffolding, analyse, architecture |
+| v0.1.0 | Laravel, auth, schéma / migrations |
+| v0.2.0 | Workspaces + Notes CRUD + policies |
+| v0.3.0 | Bureau virtuel (drag / resize / zoom / pan) |
+| v0.4.0 | OraEditor + autosave |
+| v0.5.0 | Tags, statuts, favoris, archive / corbeille |
+| v0.6.0 | Partage, permissions, notifications, journal |
+| v0.7.0 | Recherche, palette de commandes, raccourcis |
+| v0.8.0 | Administration |
+| v0.9.0 | Polish UX, thème, seeders, docs |
+| v1.0.0 | Tests verts, build production, QA |
 
-## Utilisation
-
-Documentation d’utilisation à venir.
-
-## Contribution
-
-Les contributions sont les bienvenues. Ouvrez une issue ou une pull request pour proposer des améliorations.
+Les instructions d’installation détaillées arriveront dès v0.1.0.
 
 ## Licence
 
-À définir.
+OraNotes : MIT (à confirmer avec le dépôt). OraEditor (bundle vendorisé) : MIT — notices conservées.

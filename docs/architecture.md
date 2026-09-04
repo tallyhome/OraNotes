@@ -12,7 +12,7 @@ Mélange : bureau virtuel + tableau blanc + Post-it + notes modernes + espace co
 
 | Couche | Choix | Pourquoi |
 |---|---|---|
-| Backend | **Laravel 12** + PHP 8.3+ | Demandé, Policies, Form Requests, écosystème mature |
+| Backend | **Laravel 13** + PHP 8.3+ | Version courante, Policies, Form Requests |
 | Auth | Laravel Breeze (Inertia) | Register / login / reset / verify / profil |
 | Frontend | **Vue 3 + Inertia.js + Vite** | SPA-like pour le canvas, pages Laravel, pas de double API REST obligatoire |
 | Éditeur | **OraEditor 0.1.3** bundle `ready/` | Officiel, rien à compiler, Core indépendant |

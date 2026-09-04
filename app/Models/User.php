@@ -40,6 +40,20 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $user->notes()->withTrashed()->get()->each->forceDelete();
+            $user->workspaces()->withTrashed()->get()->each->forceDelete();
+            $user->attachments()->get()->each->delete();
+        });
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;

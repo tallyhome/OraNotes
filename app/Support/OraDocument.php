@@ -23,6 +23,14 @@ final class OraDocument
         ];
     }
 
+    public const MAX_JSON_BYTES = 262_144;
+
+    public const MAX_NODES = 4_000;
+
+    public const MAX_DEPTH = 24;
+
+    public const MAX_TEXT_CHARS = 200_000;
+
     /**
      * @param  array<string, mixed>|null  $document
      */
@@ -35,6 +43,36 @@ final class OraDocument
         return ($document['type'] ?? null) === 'doc'
             && isset($document['version'])
             && is_array($document['content'] ?? null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     */
+    public static function limitError(array $document): ?string
+    {
+        $encoded = json_encode($document);
+        if ($encoded === false || strlen($encoded) > self::MAX_JSON_BYTES) {
+            return 'Document trop volumineux.';
+        }
+
+        $nodes = 0;
+        $textLen = 0;
+        $tooDeep = false;
+        self::measure($document, 0, $nodes, $textLen, $tooDeep);
+
+        if ($tooDeep) {
+            return 'Document trop profondément imbriqué.';
+        }
+
+        if ($nodes > self::MAX_NODES) {
+            return 'Document trop complexe.';
+        }
+
+        if ($textLen > self::MAX_TEXT_CHARS) {
+            return 'Document trop volumineux.';
+        }
+
+        return null;
     }
 
     /**
@@ -67,8 +105,14 @@ final class OraDocument
      * @param  array<string, mixed>  $node
      * @return array<string, mixed>
      */
-    private static function sanitizeNode(array $node): array
+    private static function sanitizeNode(array $node, int $depth = 0): array
     {
+        if ($depth > self::MAX_DEPTH) {
+            unset($node['content']);
+
+            return $node;
+        }
+
         if (isset($node['attrs']) && is_array($node['attrs'])) {
             $node['attrs'] = self::sanitizeAttrs($node['attrs']);
         }
@@ -88,7 +132,7 @@ final class OraDocument
 
         if (isset($node['content']) && is_array($node['content'])) {
             $node['content'] = array_map(
-                fn ($child) => is_array($child) ? self::sanitizeNode($child) : $child,
+                fn ($child) => is_array($child) ? self::sanitizeNode($child, $depth + 1) : $child,
                 $node['content']
             );
         }
@@ -127,15 +171,54 @@ final class OraDocument
      * @param  array<string, mixed>  $node
      * @param  list<string>  $parts
      */
-    private static function walk(array $node, array &$parts): void
+    private static function walk(array $node, array &$parts, int $depth = 0): void
     {
+        if ($depth > self::MAX_DEPTH) {
+            return;
+        }
+
         if (($node['type'] ?? null) === 'text' && isset($node['text'])) {
             $parts[] = (string) $node['text'];
         }
 
         foreach ($node['content'] ?? [] as $child) {
             if (is_array($child)) {
-                self::walk($child, $parts);
+                self::walk($child, $parts, $depth + 1);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    private static function measure(array $node, int $depth, int &$nodes, int &$textLen, bool &$tooDeep): void
+    {
+        if ($tooDeep || $nodes > self::MAX_NODES) {
+            return;
+        }
+
+        if ($depth > self::MAX_DEPTH) {
+            $tooDeep = true;
+
+            return;
+        }
+
+        $nodes++;
+
+        if (isset($node['text']) && is_string($node['text'])) {
+            $textLen += strlen($node['text']);
+        }
+
+        if (! isset($node['content']) || ! is_array($node['content'])) {
+            return;
+        }
+
+        foreach ($node['content'] as $child) {
+            if (is_array($child)) {
+                self::measure($child, $depth + 1, $nodes, $textLen, $tooDeep);
+                if ($tooDeep || $nodes > self::MAX_NODES) {
+                    return;
+                }
             }
         }
     }

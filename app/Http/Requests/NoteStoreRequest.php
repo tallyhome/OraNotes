@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\NoteColor;
 use App\Enums\NotePriority;
 use App\Enums\NoteStatus;
+use App\Http\Requests\Concerns\ValidatesOraDocument;
 use App\Models\Note;
 use App\Models\Workspace;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 class NoteStoreRequest extends FormRequest
 {
+    use ValidatesOraDocument;
+
     public function authorize(): bool
     {
         /** @var Workspace|null $workspace */
@@ -42,9 +45,14 @@ class NoteStoreRequest extends FormRequest
             'height' => ['nullable', 'numeric', 'min:120', 'max:1200'],
             'status' => ['nullable', Rule::enum(NoteStatus::class)],
             'priority' => ['nullable', Rule::enum(NotePriority::class)],
-            'tags' => ['nullable', 'array'],
+            'tags' => ['nullable', 'array', 'max:20'],
             'tags.*' => ['string', 'max:40'],
             'template' => ['nullable', 'string', Rule::in(['blank', 'todo', 'meeting'])],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(fn ($v) => $this->validateOraDocumentLimits($v));
     }
 }

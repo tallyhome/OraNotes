@@ -105,6 +105,13 @@ class Note extends Model
         return $this->morphMany(ShareLink::class, 'shareable');
     }
 
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (Note $note): void {
+            $note->attachments()->get()->each->delete();
+        });
+    }
+
     public function sharePermissionFor(User $user): ?SharePermission
     {
         $share = $this->relationLoaded('shares')

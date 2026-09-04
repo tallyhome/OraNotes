@@ -63,6 +63,13 @@ class Workspace extends Model
         return $this->morphMany(ShareLink::class, 'shareable');
     }
 
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (Workspace $workspace): void {
+            $workspace->notes()->withTrashed()->get()->each->forceDelete();
+        });
+    }
+
     public function isOwnedBy(User $user): bool
     {
         return (int) $this->user_id === (int) $user->id;

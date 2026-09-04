@@ -3,7 +3,9 @@
 namespace App\Services\Authorization;
 
 use App\Enums\SharePermission;
+use App\Models\Attachment;
 use App\Models\Note;
+use App\Models\ShareLink;
 use App\Models\User;
 use App\Models\Workspace;
 
@@ -70,5 +72,64 @@ class AccessService
     public function canEditNote(User $user, Note $note): bool
     {
         return $this->notePermission($user, $note) === SharePermission::Edit;
+    }
+
+    /**
+     * @param  list<string>  $shareTokens
+     */
+    public function canDownloadAttachment(?User $user, Attachment $attachment, array $shareTokens = []): bool
+    {
+        if ($attachment->note_id === null || ! Attachment::pathIsSafe($attachment->path)) {
+            return false;
+        }
+
+        $note = $attachment->note;
+        if ($note === null) {
+            return false;
+        }
+
+        if ($user && $this->canViewNote($user, $note)) {
+            return true;
+        }
+
+        return $this->shareTokensGrantNote($shareTokens, $note);
+    }
+
+    /**
+     * @param  list<mixed>  $tokens
+     */
+    public function shareTokensGrantNote(array $tokens, Note $note): bool
+    {
+        $tokens = array_values(array_unique(array_filter(
+            $tokens,
+            fn ($token) => is_string($token) && $token !== '',
+        )));
+
+        if ($tokens === []) {
+            return false;
+        }
+
+        $links = ShareLink::query()->whereIn('token', $tokens)->get();
+
+        foreach ($links as $link) {
+            if (! $link->isUsable()) {
+                continue;
+            }
+
+            $shareable = $link->shareable;
+            if ($shareable instanceof Note && (int) $shareable->id === (int) $note->id) {
+                return true;
+            }
+
+            if (
+                $shareable instanceof Workspace
+                && (int) $shareable->id === (int) $note->workspace_id
+                && ! $note->is_archived
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

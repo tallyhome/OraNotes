@@ -7,18 +7,23 @@ use App\Http\Resources\WorkspaceResource;
 use App\Models\Note;
 use App\Models\ShareLink;
 use App\Models\Workspace;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PublicShareController extends Controller
 {
-    public function __invoke(string $token): Response
+    public const SESSION_TOKENS_KEY = 'public_share_tokens';
+
+    public function __invoke(Request $request, string $token): Response
     {
         $link = ShareLink::query()->where('token', $token)->firstOrFail();
         abort_unless($link->isUsable(), 404);
 
         $shareable = $link->shareable;
         abort_unless($shareable, 404);
+
+        $this->rememberShareToken($request, $token);
 
         if ($shareable instanceof Note) {
             $shareable->load(['tags', 'author', 'workspace']);
@@ -44,5 +49,25 @@ class PublicShareController extends Controller
         }
 
         abort(404);
+    }
+
+    private function rememberShareToken(Request $request, string $token): void
+    {
+        $tokens = $request->session()->get(self::SESSION_TOKENS_KEY, []);
+        if (! is_array($tokens)) {
+            $tokens = [];
+        }
+
+        $tokens[] = $token;
+        $tokens = array_values(array_unique(array_filter(
+            $tokens,
+            fn ($value) => is_string($value) && $value !== '',
+        )));
+
+        if (count($tokens) > 20) {
+            $tokens = array_slice($tokens, -20);
+        }
+
+        $request->session()->put(self::SESSION_TOKENS_KEY, $tokens);
     }
 }

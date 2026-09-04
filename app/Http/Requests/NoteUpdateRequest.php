@@ -5,12 +5,15 @@ namespace App\Http\Requests;
 use App\Enums\NoteColor;
 use App\Enums\NotePriority;
 use App\Enums\NoteStatus;
+use App\Http\Requests\Concerns\ValidatesOraDocument;
 use App\Models\Note;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class NoteUpdateRequest extends FormRequest
 {
+    use ValidatesOraDocument;
+
     public function authorize(): bool
     {
         /** @var Note $note */
@@ -44,8 +47,13 @@ class NoteUpdateRequest extends FormRequest
             'height' => ['sometimes', 'numeric', 'min:120', 'max:1200'],
             'rotation' => ['sometimes', 'numeric', 'min:-30', 'max:30'],
             'z_index' => ['sometimes', 'integer', 'min:0', 'max:100000'],
-            'tags' => ['sometimes', 'array'],
+            'tags' => ['sometimes', 'array', 'max:20'],
             'tags.*' => ['string', 'max:40'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(fn ($v) => $this->validateOraDocumentLimits($v));
     }
 }

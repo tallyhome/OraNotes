@@ -11,7 +11,9 @@ use Illuminate\Validation\ValidationException;
 
 class AttachmentService
 {
-    private const MAX_BYTES = 8_388_608; // 8 Mo
+    public const MAX_BYTES = 8_388_608; // 8 Mo
+
+    public const MAX_PER_NOTE = 20;
 
     private const ALLOWED_MIMES = [
         'image/jpeg' => ['jpg', 'jpeg'],
@@ -23,6 +25,10 @@ class AttachmentService
 
     public function store(UploadedFile $file, User $user, Note $note): Attachment
     {
+        if ($note->attachments()->count() >= self::MAX_PER_NOTE) {
+            throw ValidationException::withMessages(['file' => 'Trop de pièces jointes sur cette note ('.self::MAX_PER_NOTE.' max).']);
+        }
+
         if ($file->getSize() > self::MAX_BYTES) {
             throw ValidationException::withMessages(['file' => 'Fichier trop volumineux (8 Mo max).']);
         }

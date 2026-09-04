@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Note;
 use App\Services\AttachmentService;
+use App\Services\Authorization\AccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -32,9 +33,17 @@ class AttachmentController extends Controller
         ], 201);
     }
 
-    public function show(Attachment $attachment): StreamedResponse
+    public function show(Request $request, Attachment $attachment, AccessService $access): StreamedResponse
     {
-        $disk = Storage::disk($attachment->disk);
+        $tokens = $request->session()->get(PublicShareController::SESSION_TOKENS_KEY, []);
+        abort_unless(
+            $access->canDownloadAttachment($request->user(), $attachment, is_array($tokens) ? $tokens : []),
+            404,
+        );
+
+        abort_unless(Attachment::pathIsSafe($attachment->path), 404);
+
+        $disk = Storage::disk($attachment->disk ?: 'local');
         abort_unless($disk->exists($attachment->path), 404);
 
         $inline = str_starts_with($attachment->mime, 'image/');
@@ -51,7 +60,7 @@ class AttachmentController extends Controller
                 'Content-Type' => $attachment->mime,
                 'Content-Disposition' => $disposition,
                 'X-Content-Type-Options' => 'nosniff',
-                'Cache-Control' => 'private, max-age=86400',
+                'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
             ]
         );
     }

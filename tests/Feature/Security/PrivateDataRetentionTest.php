@@ -191,6 +191,47 @@ class PrivateDataRetentionTest extends TestCase
     }
 
     #[Test]
+    public function test_workspace_share_link_grants_then_loses_attachment(): void
+    {
+        Storage::fake('local');
+
+        [$alice] = $this->twoUsers();
+        $workspace = Workspace::factory()->create(['user_id' => $alice->id]);
+        $note = Note::factory()->create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $alice->id,
+        ]);
+
+        $attachmentId = $this->actingAs($alice)
+            ->post(route('api.uploads.store'), [
+                'note' => $note->uuid,
+                'file' => UploadedFile::fake()->image('desk.png', 10, 10),
+            ], ['Accept' => 'application/json'])
+            ->json('id');
+
+        $token = $this->actingAs($alice)
+            ->postJson(route('api.workspaces.links.store', $workspace))
+            ->assertCreated()
+            ->json('link.token');
+
+        Auth::logout();
+        $this->app['auth']->forgetGuards();
+
+        $this->get(route('shares.public', $token))->assertOk();
+        $this->get(route('attachments.show', $attachmentId))->assertOk();
+
+        $this->actingAs($alice)
+            ->deleteJson(route('api.links.destroy', $token))
+            ->assertOk();
+
+        Auth::logout();
+        $this->app['auth']->forgetGuards();
+
+        $this->get(route('shares.public', $token))->assertNotFound();
+        $this->get(route('attachments.show', $attachmentId))->assertNotFound();
+    }
+
+    #[Test]
     public function test_expired_share_link_does_not_keep_attachment_access(): void
     {
         Storage::fake('local');

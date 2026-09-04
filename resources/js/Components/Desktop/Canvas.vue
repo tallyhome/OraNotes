@@ -19,7 +19,7 @@ const camera = reactive({
     y: props.workspace.canvas_settings?.y ?? 0,
     zoom: props.workspace.canvas_settings?.zoom ?? 1,
 });
-const snap = ref(!!props.workspace.canvas_settings?.snap);
+const gridOn = ref(!!(props.workspace.canvas_settings?.grid ?? props.workspace.canvas_settings?.snap));
 const selected = ref(new Set());
 const highlight = ref(props.focusNote);
 const context = ref(null);
@@ -34,11 +34,17 @@ let dirty = new Set();
 let posTimer = null;
 let camTimer = null;
 
+const GRID = 20;
+
 const worldStyle = computed(() => ({
     transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
     transformOrigin: '0 0',
-    width: '4000px',
-    height: '3000px',
+}));
+
+const gridStyle = computed(() => ({
+    '--grid-size': `${GRID * camera.zoom}px`,
+    '--grid-x': `${camera.x}px`,
+    '--grid-y': `${camera.y}px`,
 }));
 
 const marqueeStyle = computed(() => {
@@ -104,7 +110,7 @@ async function persistCamera() {
     if (!props.canEdit) return;
     try {
         await http.patch(route('workspaces.update', props.workspace.id), {
-            canvas_settings: { ...camera, snap: snap.value },
+            canvas_settings: { ...camera, snap: gridOn.value, grid: gridOn.value },
         });
     } catch {
         clearTimeout(camTimer);
@@ -117,7 +123,11 @@ function scheduleCamera() {
     camTimer = setTimeout(persistCamera, 500);
 }
 
-watch(snap, scheduleCamera);
+watch(gridOn, scheduleCamera);
+
+function toggleGrid() {
+    gridOn.value = !gridOn.value;
+}
 
 function clientToWorld(event) {
     const rect = viewport.value.getBoundingClientRect();
@@ -170,9 +180,9 @@ function onPointerMove(event) {
             if (!n) return;
             n.x = item.x + dx;
             n.y = item.y + dy;
-            if (snap.value) {
-                n.x = Math.round(n.x / 20) * 20;
-                n.y = Math.round(n.y / 20) * 20;
+            if (gridOn.value) {
+                n.x = Math.round(n.x / GRID) * GRID;
+                n.y = Math.round(n.y / GRID) * GRID;
             }
             markDirty(n.id);
         });
@@ -356,15 +366,52 @@ async function pasteClipboard() {
 }
 
 function align(kind) {
-    const group = [...selected.value].map(noteById).filter(Boolean);
+    const group = [...selected.value].map(noteById).filter((n) => n && !n.is_locked);
     if (group.length < 2) return;
+
     const minX = Math.min(...group.map((n) => n.x));
     const maxX = Math.max(...group.map((n) => n.x + n.width));
     const minY = Math.min(...group.map((n) => n.y));
+    const maxY = Math.max(...group.map((n) => n.y + n.height));
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
+
+    if (kind === 'distributeH' || kind === 'distributeV') {
+        if (group.length < 3) return;
+        const sorted = [...group].sort((a, b) => (kind === 'distributeH' ? a.x - b.x : a.y - b.y));
+        const first = sorted[0];
+        const last = sorted[sorted.length - 1];
+        if (kind === 'distributeH') {
+            const span = (last.x + last.width) - first.x;
+            const totalW = sorted.reduce((sum, n) => sum + n.width, 0);
+            const gap = (span - totalW) / (sorted.length - 1);
+            let cursor = first.x;
+            sorted.forEach((n) => {
+                n.x = cursor;
+                cursor += n.width + gap;
+                markDirty(n.id);
+            });
+        } else {
+            const span = (last.y + last.height) - first.y;
+            const totalH = sorted.reduce((sum, n) => sum + n.height, 0);
+            const gap = (span - totalH) / (sorted.length - 1);
+            let cursor = first.y;
+            sorted.forEach((n) => {
+                n.y = cursor;
+                cursor += n.height + gap;
+                markDirty(n.id);
+            });
+        }
+        return;
+    }
+
     group.forEach((n) => {
         if (kind === 'left') n.x = minX;
         if (kind === 'right') n.x = maxX - n.width;
         if (kind === 'top') n.y = minY;
+        if (kind === 'bottom') n.y = maxY - n.height;
+        if (kind === 'centerH') n.x = midX - n.width / 2;
+        if (kind === 'centerV') n.y = midY - n.height / 2;
         markDirty(n.id);
     });
 }
@@ -428,14 +475,16 @@ onUnmounted(() => {
 
 defineExpose({
     createNote, resetZoom, fitAll, bring, removeSelected, duplicateSelected,
-    patchSelected, align, centerOn, camera, snap, selected, notes,
+    patchSelected, align, centerOn, camera, gridOn, toggleGrid, selected, notes,
 });
 </script>
 
 <template>
     <div
         ref="viewport"
-        class="canvas-dot relative h-[calc(100vh-7.5rem)] touch-none overflow-hidden bg-paper-100 dark:bg-stone-900"
+        class="relative h-[calc(100vh-7.5rem)] touch-none overflow-hidden bg-paper-100 dark:bg-stone-900"
+        :class="{ 'canvas-grid': gridOn }"
+        :style="gridStyle"
         @pointerdown="onViewportDown"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"

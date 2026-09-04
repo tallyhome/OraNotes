@@ -4,6 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 
 defineProps({
     workspaces: Array,
+    archivedWorkspaces: { type: Array, default: () => [] },
     recentNotes: Array,
     favorites: Array,
     shared: Array,
@@ -41,6 +42,20 @@ function createWorkspace() {
                     <h2 class="mt-3 text-lg font-semibold">{{ ws.name }}</h2>
                     <p class="text-sm text-stone-500">{{ ws.notes_count }} notes</p>
                 </Link>
+            </section>
+
+            <section v-if="archivedWorkspaces.length" class="mb-10">
+                <h3 class="mb-3 font-semibold">Bureaux archivés</h3>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div
+                        v-for="ws in archivedWorkspaces"
+                        :key="ws.id"
+                        class="flex items-center justify-between rounded-2xl border border-dashed border-stone-300 bg-white p-4 text-sm dark:border-stone-700 dark:bg-stone-900"
+                    >
+                        <span>{{ ws.icon }} {{ ws.name }}</span>
+                        <button class="text-orange-700" @click="router.patch(route('workspaces.update', ws.id), { is_archived: false })">Restaurer</button>
+                    </div>
+                </div>
             </section>
 
             <div class="grid gap-8 lg:grid-cols-3">

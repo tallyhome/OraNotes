@@ -92,6 +92,56 @@ class WorkspaceController extends Controller
         return redirect()->route('dashboard');
     }
 
+    public function restore(Request $request, string $workspace): RedirectResponse|JsonResponse
+    {
+        $model = Workspace::onlyTrashed()->where('uuid', $workspace)->firstOrFail();
+        $this->authorize('restore', $model);
+        $this->workspaces->restore($model, $request->user());
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'workspace' => WorkspaceResource::makeArray($model->fresh())]);
+        }
+
+        return redirect()->route('workspaces.show', $model);
+    }
+
+    public function forceDestroy(Request $request, string $workspace): RedirectResponse|JsonResponse
+    {
+        $model = Workspace::withTrashed()->where('uuid', $workspace)->firstOrFail();
+        $this->authorize('forceDelete', $model);
+        $this->workspaces->forceDelete($model, $request->user(), $request->input('confirm_name'));
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return redirect()->route('dashboard');
+    }
+
+    public function lock(Request $request, Workspace $workspace): RedirectResponse|JsonResponse
+    {
+        $this->authorize('lock', $workspace);
+        $workspace = $this->workspaces->lock($workspace, $request->user());
+
+        if ($request->wantsJson()) {
+            return response()->json(['workspace' => WorkspaceResource::makeArray($workspace)]);
+        }
+
+        return back();
+    }
+
+    public function unlock(Request $request, Workspace $workspace): RedirectResponse|JsonResponse
+    {
+        $this->authorize('unlock', $workspace);
+        $workspace = $this->workspaces->unlock($workspace, $request->user());
+
+        if ($request->wantsJson()) {
+            return response()->json(['workspace' => WorkspaceResource::makeArray($workspace)]);
+        }
+
+        return back();
+    }
+
     public function duplicate(Request $request, Workspace $workspace): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $workspace);

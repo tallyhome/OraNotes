@@ -15,4 +15,17 @@ enum ActivityAction: string
     case WorkspaceCreated = 'workspace.created';
     case WorkspaceDeleted = 'workspace.deleted';
     case WorkspaceUpdated = 'workspace.updated';
+    case WorkspaceRestored = 'workspace.restored';
+    case WorkspaceForceDeleted = 'workspace.force_deleted';
+    case WorkspaceLocked = 'workspace.locked';
+    case WorkspaceUnlocked = 'workspace.unlocked';
+    case UserCreated = 'user.created';
+    case UserUpdated = 'user.updated';
+    case UserDeleted = 'user.deleted';
+    case UserDisabled = 'user.disabled';
+    case UserEnabled = 'user.enabled';
+    case UserRoleChanged = 'user.role_changed';
+    case AppUpdated = 'app.updated';
+    case AppRolledBack = 'app.rolled_back';
+    case SettingChanged = 'setting.changed';
 }

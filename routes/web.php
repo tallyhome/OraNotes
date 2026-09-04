@@ -52,6 +52,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('/workspaces/{workspace}', [WorkspaceController::class, 'update'])->name('workspaces.update');
     Route::delete('/workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
     Route::post('/workspaces/{workspace}/duplicate', [WorkspaceController::class, 'duplicate'])->name('workspaces.duplicate');
+    Route::post('/workspaces/{workspace}/restore', [WorkspaceController::class, 'restore'])->name('workspaces.restore');
+    Route::delete('/workspaces/{workspace}/force', [WorkspaceController::class, 'forceDestroy'])->name('workspaces.force');
+    Route::post('/workspaces/{workspace}/lock', [WorkspaceController::class, 'lock'])->name('workspaces.lock');
+    Route::post('/workspaces/{workspace}/unlock', [WorkspaceController::class, 'unlock'])->name('workspaces.unlock');
 
     Route::middleware('throttle:60,1')->group(function () {
         Route::get('/api/search', SearchController::class)->name('api.search');

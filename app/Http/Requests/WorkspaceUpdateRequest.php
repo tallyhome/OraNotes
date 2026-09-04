@@ -34,6 +34,7 @@ class WorkspaceUpdateRequest extends FormRequest
             'canvas_settings.x' => ['sometimes', 'numeric'],
             'canvas_settings.y' => ['sometimes', 'numeric'],
             'canvas_settings.snap' => ['sometimes', 'boolean'],
+            'canvas_settings.grid' => ['sometimes', 'boolean'],
         ];
     }
 }

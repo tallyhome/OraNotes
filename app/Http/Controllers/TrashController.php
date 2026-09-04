@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\NoteResource;
+use App\Http\Resources\WorkspaceResource;
 use App\Models\Note;
+use App\Models\Workspace;
 use App\Services\NoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,8 +27,15 @@ class TrashController extends Controller
             ->latest('deleted_at')
             ->get();
 
+        $workspaces = Workspace::onlyTrashed()
+            ->where('user_id', $request->user()->id)
+            ->withCount(['notes' => fn ($q) => $q->withTrashed()])
+            ->latest('deleted_at')
+            ->get();
+
         return Inertia::render('Trash', [
             'notes' => $notes->map(fn (Note $n) => NoteResource::makeArray($n)),
+            'workspaces' => $workspaces->map(fn (Workspace $w) => WorkspaceResource::makeArray($w)),
         ]);
     }
 

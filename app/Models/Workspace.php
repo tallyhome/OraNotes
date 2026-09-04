@@ -24,6 +24,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'is_default',
     'is_archived',
     'is_template',
+    'is_locked',
+    'locked_at',
+    'locked_by',
     'canvas_settings',
 ])]
 class Workspace extends Model
@@ -37,8 +40,15 @@ class Workspace extends Model
             'is_default' => 'boolean',
             'is_archived' => 'boolean',
             'is_template' => 'boolean',
+            'is_locked' => 'boolean',
+            'locked_at' => 'datetime',
             'canvas_settings' => 'array',
         ];
+    }
+
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'locked_by');
     }
 
     public function owner(): BelongsTo

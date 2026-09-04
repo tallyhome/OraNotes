@@ -53,6 +53,10 @@ class NotePolicy
     {
         $note->loadMissing('workspace');
 
+        if ($note->workspace?->is_locked) {
+            return false;
+        }
+
         return $note->workspace?->isOwnedBy($user)
             || (int) $note->user_id === (int) $user->id
             || $user->isAdmin();

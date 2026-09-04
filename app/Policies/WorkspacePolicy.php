@@ -32,6 +32,34 @@ class WorkspacePolicy
 
     public function delete(User $user, Workspace $workspace): bool
     {
+        if ($workspace->is_locked) {
+            return false;
+        }
+
+        return $workspace->isOwnedBy($user) || $user->isAdmin();
+    }
+
+    public function restore(User $user, Workspace $workspace): bool
+    {
+        return $workspace->isOwnedBy($user) || $user->isAdmin();
+    }
+
+    public function forceDelete(User $user, Workspace $workspace): bool
+    {
+        if ($workspace->is_locked) {
+            return false;
+        }
+
+        return $workspace->isOwnedBy($user) || $user->isAdmin();
+    }
+
+    public function lock(User $user, Workspace $workspace): bool
+    {
+        return $workspace->isOwnedBy($user) || $user->isAdmin();
+    }
+
+    public function unlock(User $user, Workspace $workspace): bool
+    {
         return $workspace->isOwnedBy($user) || $user->isAdmin();
     }
 

@@ -177,6 +177,13 @@ class NoteService
 
     public function forceDelete(Note $note, User $user): void
     {
+        $note->loadMissing('workspace');
+        if ($note->workspace?->is_locked) {
+            throw ValidationException::withMessages([
+                'workspace' => 'Ce bureau est verrouillé. Déverrouillez-le pour supprimer définitivement une note.',
+            ]);
+        }
+
         $this->logger->log(ActivityAction::NoteForceDeleted, $user, $note, [
             'title' => $note->title,
         ]);

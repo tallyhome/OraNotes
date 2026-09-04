@@ -63,6 +63,8 @@ class WorkspaceService
      */
     public function update(Workspace $workspace, User $user, array $data): Workspace
     {
+        unset($data['is_locked'], $data['locked_at'], $data['locked_by']);
+
         if (! $workspace->isOwnedBy($user)) {
             unset($data['is_default'], $data['is_template'], $data['is_archived']);
         }
@@ -85,12 +87,82 @@ class WorkspaceService
         $this->logger->log(ActivityAction::WorkspaceUpdated, $user, $workspace, ['archived' => true]);
     }
 
+    public function restoreArchived(Workspace $workspace, User $user): void
+    {
+        $workspace->update(['is_archived' => false]);
+        $this->logger->log(ActivityAction::WorkspaceUpdated, $user, $workspace, ['archived' => false]);
+    }
+
     public function delete(Workspace $workspace, User $user): void
     {
+        $this->assertUnlocked($workspace, 'supprimer ce bureau');
         $workspace->delete();
         $this->logger->log(ActivityAction::WorkspaceDeleted, $user, $workspace, [
             'name' => $workspace->name,
         ]);
+    }
+
+    public function restore(Workspace $workspace, User $user): Workspace
+    {
+        $workspace->restore();
+        $this->logger->log(ActivityAction::WorkspaceRestored, $user, $workspace, [
+            'name' => $workspace->name,
+        ]);
+
+        return $workspace->refresh();
+    }
+
+    public function forceDelete(Workspace $workspace, User $user, ?string $confirmation = null): void
+    {
+        $this->assertUnlocked($workspace, 'supprimer définitivement ce bureau');
+
+        $noteCount = $workspace->notes()->withTrashed()->count();
+        if ($noteCount > 0 && $confirmation !== $workspace->name) {
+            throw ValidationException::withMessages([
+                'confirm_name' => 'Saisissez le nom du bureau (« '.$workspace->name.' ») pour confirmer la suppression de '.$noteCount.' note(s).',
+            ]);
+        }
+
+        $this->logger->log(ActivityAction::WorkspaceForceDeleted, $user, $workspace, [
+            'name' => $workspace->name,
+            'notes' => $noteCount,
+        ]);
+        $workspace->forceDelete();
+    }
+
+    public function lock(Workspace $workspace, User $user): Workspace
+    {
+        $workspace->forceFill([
+            'is_locked' => true,
+            'locked_at' => now(),
+            'locked_by' => $user->id,
+        ])->save();
+
+        $this->logger->log(ActivityAction::WorkspaceLocked, $user, $workspace);
+
+        return $workspace->refresh();
+    }
+
+    public function unlock(Workspace $workspace, User $user): Workspace
+    {
+        $workspace->forceFill([
+            'is_locked' => false,
+            'locked_at' => null,
+            'locked_by' => null,
+        ])->save();
+
+        $this->logger->log(ActivityAction::WorkspaceUnlocked, $user, $workspace);
+
+        return $workspace->refresh();
+    }
+
+    public function assertUnlocked(Workspace $workspace, string $action): void
+    {
+        if ($workspace->is_locked) {
+            throw ValidationException::withMessages([
+                'workspace' => 'Ce bureau est verrouillé. Déverrouillez-le pour '.$action.'.',
+            ]);
+        }
     }
 
     public function duplicate(Workspace $workspace, User $user): Workspace

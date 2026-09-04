@@ -63,6 +63,16 @@ body {
     background-image: radial-gradient(circle, rgba(245, 240, 232, 0.08) 1px, transparent 1px);
 }
 
+.canvas-grid {
+    background-image: radial-gradient(circle, rgba(28, 25, 23, 0.22) 1.1px, transparent 1.2px);
+    background-size: var(--grid-size, 20px) var(--grid-size, 20px);
+    background-position: var(--grid-x, 0px) var(--grid-y, 0px);
+}
+
+.dark .canvas-grid {
+    background-image: radial-gradient(circle, rgba(245, 240, 232, 0.22) 1.1px, transparent 1.2px);
+}
+
 .ora-editor-host {
     min-height: 360px;
 }

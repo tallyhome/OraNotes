@@ -51,8 +51,16 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $archivedWorkspaces = Workspace::query()
+            ->where('user_id', $user->id)
+            ->where('is_archived', true)
+            ->withCount('notes')
+            ->latest('updated_at')
+            ->get();
+
         return Inertia::render('Dashboard', [
             'workspaces' => $workspaces->map(fn (Workspace $w) => WorkspaceResource::makeArray($w)),
+            'archivedWorkspaces' => $archivedWorkspaces->map(fn (Workspace $w) => WorkspaceResource::makeArray($w)),
             'recentNotes' => $recentNotes->map(fn (Note $n) => NoteResource::makeArray($n)),
             'favorites' => $favorites->map(fn (Note $n) => NoteResource::makeArray($n)),
             'shared' => $shared->map(fn (Note $n) => NoteResource::makeArray($n)),

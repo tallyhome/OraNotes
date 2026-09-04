@@ -25,6 +25,7 @@ const editingShares = ref([]);
 const editingLinks = ref([]);
 const shareOpen = ref(false);
 const settingsOpen = ref(false);
+const alignOpen = ref(false);
 const shareForm = ref({ email: '', permission: 'read' });
 const shareError = ref('');
 const workspaceLinks = ref([...(props.shareLinks || [])]);
@@ -131,8 +132,20 @@ function duplicateWorkspace() {
 }
 
 function deleteWorkspace() {
-    if (!confirm('Supprimer ce bureau et ses notes ?')) return;
+    if (props.workspace.is_locked) {
+        window.alert('Ce bureau est verrouillé. Déverrouillez-le avant de le supprimer.');
+        return;
+    }
+    const count = props.notes?.length || 0;
+    if (!confirm(count ? `Mettre ce bureau et ses ${count} notes à la corbeille ?` : 'Mettre ce bureau à la corbeille ?')) {
+        return;
+    }
     router.delete(route('workspaces.destroy', props.workspace.id));
+}
+
+function toggleLock() {
+    const action = props.workspace.is_locked ? 'unlock' : 'lock';
+    router.post(route(`workspaces.${action}`, props.workspace.id));
 }
 
 function createWorkspace() {
@@ -154,9 +167,15 @@ function createWorkspace() {
                 <button v-if="canEdit" class="rounded-full bg-orange-600 px-3 py-1.5 text-white" @click="canvas.createNote()">+ Note (N)</button>
                 <button class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="canvas.fitAll()">Tout voir</button>
                 <button class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="canvas.resetZoom()">100%</button>
-                <label class="flex items-center gap-1 text-xs">
-                    <input v-if="canvas" v-model="canvas.snap" type="checkbox"> Grille
-                </label>
+                <button
+                    type="button"
+                    class="rounded-full border px-3 py-1.5 dark:border-stone-700"
+                    :class="canvas?.gridOn ? 'bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-100' : ''"
+                    :aria-pressed="!!canvas?.gridOn"
+                    @click="canvas?.toggleGrid()"
+                >
+                    Grille
+                </button>
                 <button v-if="canManage && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="shareOpen = !shareOpen; settingsOpen = false">Partager</button>
                 <button v-if="isOwner && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="settingsOpen = !settingsOpen; shareOpen = false">Bureau</button>
                 <button v-if="canEdit && !publicShare" class="rounded-full border px-3 py-1.5 dark:border-stone-700" @click="createWorkspace">Nouveau bureau</button>
@@ -167,7 +186,19 @@ function createWorkspace() {
             <button v-for="color in colors" :key="color" class="h-6 w-6 rounded-full border" :class="`sticky-${color}`" @click="canvas.patchSelected({ color })" />
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.patchSelected({ is_favorite: true })">Favori</button>
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.patchSelected({ is_archived: true })">Archiver</button>
-            <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.align('left')">Aligner</button>
+            <div class="relative">
+                <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="alignOpen = !alignOpen">Aligner ▾</button>
+                <div v-if="alignOpen" class="absolute left-0 z-30 mt-1 w-52 rounded-xl border bg-white py-1 text-xs shadow-lg dark:border-stone-700 dark:bg-stone-900">
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('left'); alignOpen = false">Gauche</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('centerH'); alignOpen = false">Centre horizontal</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('right'); alignOpen = false">Droite</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('top'); alignOpen = false">Haut</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('centerV'); alignOpen = false">Centre vertical</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('bottom'); alignOpen = false">Bas</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('distributeH'); alignOpen = false">Répartir horizontalement</button>
+                    <button class="block w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800" @click="canvas.align('distributeV'); alignOpen = false">Répartir verticalement</button>
+                </div>
+            </div>
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.bring('front')">Avant</button>
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.bring('back')">Arrière</button>
             <button class="rounded-full border px-2 py-1 dark:border-stone-700" @click="canvas.duplicateSelected()">Dupliquer (D)</button>
@@ -215,6 +246,7 @@ function createWorkspace() {
             </div>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
                 <button class="rounded-full border px-3 py-1" @click="duplicateWorkspace">Dupliquer</button>
+                <button class="rounded-full border px-3 py-1" @click="toggleLock">{{ workspace.is_locked ? 'Déverrouiller' : 'Verrouiller' }}</button>
                 <button class="rounded-full border px-3 py-1" @click="archiveWorkspace">Archiver</button>
                 <button class="rounded-full border border-red-300 px-3 py-1 text-red-600" @click="deleteWorkspace">Supprimer</button>
             </div>

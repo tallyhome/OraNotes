@@ -20,7 +20,8 @@ class WorkspaceResource
             'is_default' => $workspace->is_default,
             'is_archived' => $workspace->is_archived,
             'is_template' => $workspace->is_template,
-            'canvas_settings' => $workspace->canvas_settings ?? ['zoom' => 1, 'x' => 0, 'y' => 0, 'snap' => false],
+            'is_locked' => (bool) $workspace->is_locked,
+            'canvas_settings' => $workspace->canvas_settings ?? ['zoom' => 1, 'x' => 0, 'y' => 0, 'snap' => false, 'grid' => false],
             'notes_count' => $workspace->notes_count ?? 0,
             'updated_at' => $workspace->updated_at?->toIso8601String(),
         ];

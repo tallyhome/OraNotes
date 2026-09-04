@@ -21,7 +21,7 @@ class AttachmentService
         'application/pdf' => ['pdf'],
     ];
 
-    public function store(UploadedFile $file, User $user, ?Note $note = null): Attachment
+    public function store(UploadedFile $file, User $user, Note $note): Attachment
     {
         if ($file->getSize() > self::MAX_BYTES) {
             throw ValidationException::withMessages(['file' => 'Fichier trop volumineux (8 Mo max).']);
@@ -37,17 +37,20 @@ class AttachmentService
             throw ValidationException::withMessages(['file' => 'Extension incohérente avec le type réel.']);
         }
 
-        $safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'fichier';
+        if (str_starts_with($mime, 'image/') && @getimagesize($file->getRealPath()) === false) {
+            throw ValidationException::withMessages(['file' => 'Image invalide.']);
+        }
+
         $stored = $file->storeAs(
-            'ora-editor/'.$user->id,
-            $safeName.'-'.Str::random(8).'.'.$extension,
-            'public'
+            'attachments/'.$user->id,
+            (string) Str::uuid().'.'.$extension,
+            'local'
         );
 
         return Attachment::query()->create([
             'user_id' => $user->id,
-            'note_id' => $note?->id,
-            'disk' => 'public',
+            'note_id' => $note->id,
+            'disk' => 'local',
             'path' => $stored,
             'original_name' => $file->getClientOriginalName(),
             'mime' => $mime,

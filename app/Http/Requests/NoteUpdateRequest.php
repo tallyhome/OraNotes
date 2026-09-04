@@ -30,7 +30,7 @@ class NoteUpdateRequest extends FormRequest
             'document.type' => ['required_with:document', 'in:doc'],
             'document.version' => ['required_with:document', 'integer'],
             'document.content' => ['required_with:document', 'array'],
-            'html_preview' => ['nullable', 'string'],
+            'html_preview' => ['nullable', 'string', 'max:100000'],
             'color' => ['sometimes', Rule::enum(NoteColor::class)],
             'icon' => ['nullable', 'string', 'max:32'],
             'status' => ['sometimes', Rule::enum(NoteStatus::class)],

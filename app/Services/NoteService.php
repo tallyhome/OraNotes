@@ -29,6 +29,8 @@ class NoteService
             ? $data['document']
             : OraDocument::empty();
 
+        $document = OraDocument::sanitize($document);
+
         $note = Note::query()->create([
             'workspace_id' => $workspace->id,
             'user_id' => $user->id,
@@ -64,14 +66,25 @@ class NoteService
      */
     public function update(Note $note, User $user, array $data): Note
     {
+        unset($data['user_id'], $data['workspace_id'], $data['id'], $data['uuid']);
+
+        if (array_key_exists('is_locked', $data)
+            && (int) $note->user_id !== (int) $user->id
+            && ! $note->workspace?->isOwnedBy($user)
+        ) {
+            unset($data['is_locked']);
+        }
+
         $dirtyDocument = array_key_exists('document', $data) && OraDocument::isValid($data['document']);
 
         if ($dirtyDocument) {
             $this->snapshot($note, $user);
+            $data['document'] = OraDocument::sanitize($data['document']);
             $data['text_content'] = OraDocument::extractText($data['document']);
-            if (isset($data['html_preview'])) {
-                $data['html_preview'] = HtmlSanitizer::clean($data['html_preview']);
-            }
+        }
+
+        if (array_key_exists('html_preview', $data)) {
+            $data['html_preview'] = HtmlSanitizer::clean($data['html_preview']);
         }
 
         $note->fill($data);

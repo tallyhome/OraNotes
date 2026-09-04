@@ -53,6 +53,77 @@ final class OraDocument
     }
 
     /**
+     * Strip unsafe URLs from document attrs and marks before persistence.
+     *
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    public static function sanitize(array $document): array
+    {
+        return self::sanitizeNode($document);
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>
+     */
+    private static function sanitizeNode(array $node): array
+    {
+        if (isset($node['attrs']) && is_array($node['attrs'])) {
+            $node['attrs'] = self::sanitizeAttrs($node['attrs']);
+        }
+
+        if (isset($node['marks']) && is_array($node['marks'])) {
+            $node['marks'] = array_values(array_map(function ($mark) {
+                if (! is_array($mark)) {
+                    return $mark;
+                }
+                if (isset($mark['attrs']) && is_array($mark['attrs'])) {
+                    $mark['attrs'] = self::sanitizeAttrs($mark['attrs']);
+                }
+
+                return $mark;
+            }, $node['marks']));
+        }
+
+        if (isset($node['content']) && is_array($node['content'])) {
+            $node['content'] = array_map(
+                fn ($child) => is_array($child) ? self::sanitizeNode($child) : $child,
+                $node['content']
+            );
+        }
+
+        return $node;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attrs
+     * @return array<string, mixed>
+     */
+    private static function sanitizeAttrs(array $attrs): array
+    {
+        foreach (['href', 'src', 'srcset'] as $key) {
+            if (! array_key_exists($key, $attrs)) {
+                continue;
+            }
+
+            $value = is_string($attrs[$key]) ? $attrs[$key] : '';
+            $forImage = $key !== 'href';
+            if ($value === '' || ! HtmlSanitizer::isSafeUrl($value, $forImage)) {
+                unset($attrs[$key]);
+            }
+        }
+
+        foreach (array_keys($attrs) as $name) {
+            if (str_starts_with(strtolower((string) $name), 'on')) {
+                unset($attrs[$name]);
+            }
+        }
+
+        return $attrs;
+    }
+
+    /**
      * @param  array<string, mixed>  $node
      * @param  list<string>  $parts
      */

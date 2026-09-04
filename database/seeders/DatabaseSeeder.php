@@ -27,11 +27,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Ada Admin',
             'email' => 'admin@oranotes.test',
             'password' => Hash::make('password'),
-            'role' => UserRole::Admin,
             'email_verified_at' => now(),
             'theme' => 'auto',
             'locale' => 'fr',
         ]);
+        $admin->forceFill(['role' => UserRole::Admin])->save();
 
         $alice = User::query()->create([
             'name' => 'Alice Martin',

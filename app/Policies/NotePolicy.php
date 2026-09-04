@@ -41,12 +41,12 @@ class NotePolicy
 
     public function delete(User $user, Note $note): bool
     {
-        return $this->access->canEditNote($user, $note);
+        return $this->ownsOrManagesWorkspace($user, $note);
     }
 
     public function restore(User $user, Note $note): bool
     {
-        return $this->access->canEditNote($user, $note);
+        return $this->ownsOrManagesWorkspace($user, $note);
     }
 
     public function forceDelete(User $user, Note $note): bool
@@ -65,5 +65,18 @@ class NotePolicy
         return $note->workspace?->isOwnedBy($user)
             || (int) $note->user_id === (int) $user->id
             || $user->isAdmin();
+    }
+
+    private function ownsOrManagesWorkspace(User $user, Note $note): bool
+    {
+        $note->loadMissing('workspace');
+
+        if ((int) $note->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return $note->workspace
+            ? $this->access->canEditWorkspace($user, $note->workspace)
+            : false;
     }
 }

@@ -52,7 +52,7 @@ class UserController extends Controller
             abort_if($admins <= 1, 422, 'Impossible de retirer le dernier administrateur.');
         }
 
-        $user->fill($data);
+        $user->forceFill($data);
         $user->save();
 
         return back();

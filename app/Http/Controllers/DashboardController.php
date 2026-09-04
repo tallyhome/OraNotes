@@ -18,6 +18,7 @@ class DashboardController extends Controller
 
         $workspaces = Workspace::query()
             ->visibleTo($user)
+            ->where('is_archived', false)
             ->withCount('notes')
             ->latest('updated_at')
             ->limit(8)

@@ -1,0 +1,12 @@
+{
+    "validation.required": "Ce champ est obligatoire.",
+    "validation.email": "L’adresse e-mail n’est pas valide.",
+    "validation.unique": "Cette valeur est déjà utilisée.",
+    "validation.confirmed": "La confirmation ne correspond pas.",
+    "validation.max.string": "Ce champ ne peut pas dépasser :max caractères.",
+    "validation.max.file": "Le fichier ne peut pas dépasser :max Ko.",
+    "validation.image": "Le fichier doit être une image.",
+    "validation.mimes": "Formats acceptés : :values.",
+    "validation.in": "La valeur sélectionnée n’est pas valide.",
+    "validation.current_password": "Le mot de passe actuel est incorrect."
+}

@@ -16,6 +16,7 @@ const commands = computed(() => {
         { id: 'shared', label: 'Partagés avec moi', url: '/shared' },
         { id: 'trash', label: 'Corbeille', url: '/trash' },
         { id: 'profile', label: 'Profil et thème', url: '/profile' },
+        { id: 'logout', label: 'Déconnexion', url: '/logout', method: 'post' },
     ];
     (page.props.workspaces || []).forEach((ws) => {
         items.push({ id: `ws-${ws.id}`, label: `Bureau : ${ws.name}`, url: `/workspaces/${ws.id}` });
@@ -44,14 +45,23 @@ watch(query, (value) => {
     }, 180);
 });
 
-function visit(url) {
+function visit(item) {
     open.value = false;
-    router.visit(url);
+    if (item.method === 'post') {
+        router.post(item.url);
+        return;
+    }
+    router.visit(item.url);
 }
 
 function openNote(note) {
     open.value = false;
     router.visit(`/workspaces/${note.workspace_id}?note=${note.id}`);
+}
+
+function openWorkspace(workspace) {
+    open.value = false;
+    router.visit(`/workspaces/${workspace.id}`);
 }
 </script>
 
@@ -72,10 +82,22 @@ function openNote(note) {
                     :key="cmd.id"
                     type="button"
                     class="block w-full rounded-lg px-3 py-2 text-left hover:bg-stone-100 dark:hover:bg-stone-800"
-                    @click="visit(cmd.url)"
+                    @click="visit(cmd)"
                 >
                     {{ cmd.label }}
                 </button>
+                <template v-if="results.workspaces.length">
+                    <p class="mt-2 px-2 py-1 text-xs uppercase text-stone-400">Bureaux</p>
+                    <button
+                        v-for="workspace in results.workspaces"
+                        :key="workspace.id"
+                        type="button"
+                        class="block w-full rounded-lg px-3 py-2 text-left hover:bg-stone-100 dark:hover:bg-stone-800"
+                        @click="openWorkspace(workspace)"
+                    >
+                        {{ workspace.icon }} {{ workspace.name }}
+                    </button>
+                </template>
                 <template v-if="results.notes.length">
                     <p class="mt-2 px-2 py-1 text-xs uppercase text-stone-400">Notes</p>
                     <button

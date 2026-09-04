@@ -43,6 +43,28 @@ class ProfileTest extends TestCase
         $this->assertNull($user->email_verified_at);
     }
 
+    public function test_profile_theme_can_be_updated(): void
+    {
+        $user = User::factory()->create(['theme' => 'auto']);
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => $user->email,
+                'theme' => 'dark',
+                'locale' => 'fr',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'theme' => 'dark',
+        ]);
+        $this->assertSame('dark', $user->fresh()->theme->value);
+    }
+
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
         $user = User::factory()->create();

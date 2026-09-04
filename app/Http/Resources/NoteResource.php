@@ -15,7 +15,7 @@ class NoteResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return self::makeArray($this->resource, includeDocument: (bool) $this->additional['include_document'] ?? false);
+        return self::makeArray($this->resource, includeDocument: (bool) ($this->additional['include_document'] ?? false));
     }
 
     /**

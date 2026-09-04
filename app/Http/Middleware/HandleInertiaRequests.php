@@ -30,8 +30,12 @@ class HandleInertiaRequests extends Middleware
             ],
             'workspaces' => $user
                 ? Workspace::query()
-                    ->visibleTo($user)
+                    ->where(function ($query) use ($user) {
+                        $query->visibleTo($user)
+                            ->orWhereHas('notes.shares', fn ($shares) => $shares->where('user_id', $user->id));
+                    })
                     ->where('is_archived', false)
+                    ->withCount('notes')
                     ->orderByDesc('is_default')
                     ->orderBy('name')
                     ->get()

@@ -17,7 +17,7 @@ class WorkspacePolicy
 
     public function view(User $user, Workspace $workspace): bool
     {
-        return $this->access->canViewWorkspace($user, $workspace);
+        return $this->access->canAccessWorkspacePage($user, $workspace);
     }
 
     public function create(User $user): bool

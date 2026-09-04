@@ -25,7 +25,7 @@ function setRole(user, role) {
                         <td>{{ user.role }}</td>
                         <td>{{ user.is_active ? 'actif' : 'off' }}</td>
                         <td class="space-x-2">
-                            <button class="underline" @click="toggle(user)">Activer</button>
+                            <button class="underline" @click="toggle(user)">{{ user.is_active ? 'Désactiver' : 'Activer' }}</button>
                             <button class="underline" @click="setRole(user, user.role === 'admin' ? 'user' : 'admin')">Rôle</button>
                         </td>
                     </tr>

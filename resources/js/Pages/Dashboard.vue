@@ -10,7 +10,11 @@ defineProps({
 });
 
 function createWorkspace() {
-    router.post(route('workspaces.store'), { name: 'Nouveau bureau', icon: '🗂️', color: 'yellow' });
+    const name = window.prompt('Nom du bureau', 'Nouveau bureau');
+    if (!name) {
+        return;
+    }
+    router.post(route('workspaces.store'), { name, icon: '🗂️', color: 'yellow' });
 }
 </script>
 

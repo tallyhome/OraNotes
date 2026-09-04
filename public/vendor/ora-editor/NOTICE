@@ -1,0 +1,19 @@
+OraEditor
+========
+
+This directory contains the official ready-to-use OraEditor 0.1.3 browser
+bundle (JS + CSS + manifest) from:
+
+    https://github.com/tallyhome/OraEditor
+    ready/ora-editor/
+
+OraEditor is an autonomous TypeScript rich-text engine. The Core is independent
+of Laravel and of any UI framework. The Laravel adapter package `ora/laravel`
+is not published on Packagist; OraNotes therefore vendors this official kit
+instead of copying the TypeScript source.
+
+License: MIT (see packages/laravel/composer.json in the OraEditor repository).
+Copyright remains with the OraEditor authors (tallyhome).
+
+Do not edit ora-editor.js / ora-editor.css by hand. Replace the files from a
+newer official ready/ release when upgrading. Checksums: ora-editor.manifest.json.

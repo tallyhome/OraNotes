@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Attachment;
+use App\Models\Note;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
+class AttachmentService
+{
+    private const MAX_BYTES = 8_388_608; // 8 Mo
+
+    private const ALLOWED_MIMES = [
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/png' => ['png'],
+        'image/gif' => ['gif'],
+        'image/webp' => ['webp'],
+        'application/pdf' => ['pdf'],
+    ];
+
+    public function store(UploadedFile $file, User $user, ?Note $note = null): Attachment
+    {
+        if ($file->getSize() > self::MAX_BYTES) {
+            throw ValidationException::withMessages(['file' => 'Fichier trop volumineux (8 Mo max).']);
+        }
+
+        $mime = $file->getMimeType() ?: '';
+        if (! isset(self::ALLOWED_MIMES[$mime])) {
+            throw ValidationException::withMessages(['file' => 'Type de fichier non autorisé.']);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
+        if (! in_array($extension, self::ALLOWED_MIMES[$mime], true)) {
+            throw ValidationException::withMessages(['file' => 'Extension incohérente avec le type réel.']);
+        }
+
+        $safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'fichier';
+        $stored = $file->storeAs(
+            'ora-editor/'.$user->id,
+            $safeName.'-'.Str::random(8).'.'.$extension,
+            'public'
+        );
+
+        return Attachment::query()->create([
+            'user_id' => $user->id,
+            'note_id' => $note?->id,
+            'disk' => 'public',
+            'path' => $stored,
+            'original_name' => $file->getClientOriginalName(),
+            'mime' => $mime,
+            'size' => (int) $file->getSize(),
+        ]);
+    }
+}

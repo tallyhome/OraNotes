@@ -2,7 +2,13 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\HealthController as AdminHealthController;
 use App\Http\Controllers\Admin\NoteModerationController;
+use App\Http\Controllers\Admin\SecurityController as AdminSecurityController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\StorageController as AdminStorageController;
+use App\Http\Controllers\Admin\SystemController as AdminSystemController;
+use App\Http\Controllers\Admin\UpdateController as AdminUpdateController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceModerationController;
 use App\Http\Controllers\AttachmentController;
@@ -95,13 +101,31 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', AdminDashboardController::class)->name('dashboard');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{id}/restore', [AdminUserController::class, 'restore'])->whereNumber('id')->name('users.restore');
+    Route::post('/users/{user}/password', [AdminUserController::class, 'resetPassword'])->name('users.password');
+    Route::post('/users/{user}/logout-sessions', [AdminUserController::class, 'logoutSessions'])->name('users.sessions');
     Route::get('/notes', [NoteModerationController::class, 'index'])->name('notes.index');
+    Route::patch('/notes/{note}', [NoteModerationController::class, 'update'])->name('notes.update');
+    Route::post('/notes/{note}/restore', [NoteModerationController::class, 'restore'])->name('notes.restore');
     Route::delete('/notes/{note}', [NoteModerationController::class, 'destroy'])->name('notes.destroy');
     Route::get('/workspaces', [WorkspaceModerationController::class, 'index'])->name('workspaces.index');
+    Route::patch('/workspaces/{workspace}', [WorkspaceModerationController::class, 'update'])->name('workspaces.update');
+    Route::post('/workspaces/{workspace}/lock', [WorkspaceModerationController::class, 'lock'])->name('workspaces.lock');
+    Route::post('/workspaces/{workspace}/unlock', [WorkspaceModerationController::class, 'unlock'])->name('workspaces.unlock');
+    Route::post('/workspaces/{workspace}/restore', [WorkspaceModerationController::class, 'restore'])->name('workspaces.restore');
     Route::delete('/workspaces/{workspace}', [WorkspaceModerationController::class, 'destroy'])->name('workspaces.destroy');
     Route::get('/activity', ActivityLogController::class)->name('activity');
+    Route::get('/system', AdminSystemController::class)->name('system');
+    Route::get('/updates', AdminUpdateController::class)->name('updates');
+    Route::post('/updates', [AdminUpdateController::class, 'apply'])->name('updates.apply');
+    Route::get('/settings', AdminSettingsController::class)->name('settings');
+    Route::get('/security', AdminSecurityController::class)->name('security');
+    Route::get('/storage', AdminStorageController::class)->name('storage');
+    Route::get('/health', AdminHealthController::class)->name('health');
 });
 
 require __DIR__.'/auth.php';

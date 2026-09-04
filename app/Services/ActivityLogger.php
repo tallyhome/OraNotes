@@ -21,6 +21,7 @@ class ActivityLogger
             'subject_id' => $subject?->getKey(),
             'properties' => $properties ?: null,
             'ip_address' => $request?->ip(),
+            'user_agent' => $request ? substr((string) $request->userAgent(), 0, 512) : null,
         ]);
     }
 }

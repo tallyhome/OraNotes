@@ -28,6 +28,7 @@ class ActivityLogController extends Controller
                 'subject_id' => $log->subject_id,
                 'properties' => $log->properties,
                 'ip_address' => $log->ip_address,
+                'user_agent' => $log->user_agent,
                 'created_at' => $log->created_at?->toIso8601String(),
             ]),
             'filters' => $request->only(['action']),

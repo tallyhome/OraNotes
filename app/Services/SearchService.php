@@ -23,6 +23,7 @@ class SearchService
         }
 
         $like = '%'.addcslashes($term, '%_\\').'%';
+        $driver = Note::query()->getConnection()->getDriverName();
 
         $workspaces = Workspace::query()
             ->visibleTo($user)
@@ -42,10 +43,16 @@ class SearchService
                 $q->whereHas('workspace', fn ($w) => $w->visibleTo($user))
                     ->orWhereHas('shares', fn ($s) => $s->where('user_id', $user->id));
             })
-            ->where(function ($q) use ($like) {
-                $q->where('title', 'like', $like)
-                    ->orWhere('text_content', 'like', $like)
-                    ->orWhereHas('tags', fn ($t) => $t->where('name', 'like', $like));
+            ->where(function ($q) use ($like, $term, $driver) {
+                if ($driver === 'mysql') {
+                    $q->whereFullText(['title', 'text_content'], $term)
+                        ->orWhere('title', 'like', $like)
+                        ->orWhere('text_content', 'like', $like);
+                } else {
+                    $q->where('title', 'like', $like)
+                        ->orWhere('text_content', 'like', $like);
+                }
+                $q->orWhereHas('tags', fn ($t) => $t->where('name', 'like', $like));
             })
             ->latest('updated_at')
             ->limit($limit)

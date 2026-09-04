@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['user_id', 'action', 'subject_type', 'subject_id', 'properties', 'ip_address'])]
+#[Fillable(['user_id', 'action', 'subject_type', 'subject_id', 'properties', 'ip_address', 'user_agent'])]
 class ActivityLog extends Model
 {
     protected function casts(): array

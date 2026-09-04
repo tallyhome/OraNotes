@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import OraEditorHost from './OraEditorHost.vue';
 import http from '@/composables/useHttp';
 import { usePage } from '@inertiajs/vue3';
+import { useCollab } from '@/collab/useCollab';
 
 const props = defineProps({
     note: { type: Object, required: true },
@@ -33,8 +34,21 @@ let timer;
 
 const userTheme = computed(() => page.props.auth?.user?.theme ?? 'auto');
 const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange', 'gray'];
+const {
+    members: collabMembers,
+    online: collabOnline,
+    connected: collabConnected,
+    localChange: collabLocalChange,
+    start: startCollab,
+    stop: stopCollab,
+} = useCollab(props.note.id, {
+    canEdit: props.canEdit,
+    onRemoteDocument: (doc) => host.value?.setJSON?.(doc),
+    onRevoked: () => { status.value = 'error'; },
+});
 
 function onChange(payload) {
+    collabLocalChange(payload.document);
     if (!props.canEdit) {
         return;
     }
@@ -141,10 +155,14 @@ function onKey(event) {
     }
 }
 
-onMounted(() => window.addEventListener('keydown', onKey));
+onMounted(() => {
+    window.addEventListener('keydown', onKey);
+    startCollab();
+});
 onUnmounted(() => {
     window.removeEventListener('keydown', onKey);
     clearTimeout(timer);
+    stopCollab();
 });
 </script>
 
@@ -159,7 +177,8 @@ onUnmounted(() => {
                     @change="saveNow"
                 >
                 <span class="text-xs text-stone-500">
-                    {{ status === 'saving' ? 'Enregistrement…' : status === 'error' ? 'Erreur — brouillon local' : 'Enregistré' }}
+                    {{ !collabOnline ? 'Hors ligne' : !collabConnected ? 'Reconnexion…' : (status === 'saving' ? 'Enregistrement…' : status === 'error' ? 'Erreur — brouillon local' : 'Enregistré') }}
+                    <span v-if="collabMembers.length" class="ml-2">· {{ collabMembers.map((m) => m.name).join(', ') }}</span>
                 </span>
                 <button type="button" class="rounded-lg px-3 py-1 text-sm hover:bg-stone-100 dark:hover:bg-stone-800" @click="close">Fermer</button>
             </header>

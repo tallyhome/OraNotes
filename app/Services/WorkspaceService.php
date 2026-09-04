@@ -6,6 +6,7 @@ use App\Enums\ActivityAction;
 use App\Enums\SharePermission;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Notifications\AccessRevokedNotification;
 use App\Notifications\WorkspaceSharedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -211,5 +212,6 @@ class WorkspaceService
         $this->logger->log(ActivityAction::ShareRemoved, $actor, $workspace, [
             'member_id' => $member->id,
         ]);
+        $member->notify(new AccessRevokedNotification($workspace, $actor));
     }
 }

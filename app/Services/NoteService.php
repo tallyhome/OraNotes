@@ -10,8 +10,10 @@ use App\Models\Note;
 use App\Models\NoteVersion;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Notifications\NoteUpdatedNotification;
 use App\Support\HtmlSanitizer;
 use App\Support\OraDocument;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -71,7 +73,7 @@ class NoteService
      */
     public function update(Note $note, User $user, array $data): Note
     {
-        unset($data['user_id'], $data['workspace_id'], $data['id'], $data['uuid']);
+        unset($data['user_id'], $data['workspace_id'], $data['id'], $data['uuid'], $data['collab_state'], $data['collab_seq']);
 
         if (array_key_exists('is_locked', $data)
             && (int) $note->user_id !== (int) $user->id
@@ -103,6 +105,10 @@ class NoteService
         }
 
         $this->logger->log(ActivityAction::NoteUpdated, $user, $note);
+
+        if ($dirtyDocument) {
+            $this->notifyCollaborators($note, $user);
+        }
 
         return $note->fresh(['tags', 'author']);
     }
@@ -209,6 +215,29 @@ class NoteService
             $ids[] = $tag->id;
         }
         $note->tags()->sync($ids);
+    }
+
+    private function notifyCollaborators(Note $note, User $user): void
+    {
+        $throttleKey = 'notify:note-updated:'.$note->id.':'.$user->id;
+        if (Cache::has($throttleKey)) {
+            return;
+        }
+        Cache::put($throttleKey, true, now()->addMinutes(10));
+
+        $note->loadMissing('workspace');
+        $recipientIds = $note->sharedUsers()->pluck('users.id')
+            ->merge($note->workspace?->members()->pluck('users.id') ?? collect())
+            ->push($note->user_id)
+            ->unique()
+            ->reject(fn ($id) => (int) $id === (int) $user->id);
+
+        User::query()
+            ->whereIn('id', $recipientIds)
+            ->where('is_active', true)
+            ->get()
+            ->each
+            ->notify(new NoteUpdatedNotification($note, $user));
     }
 
     private function snapshot(Note $note, User $user): void

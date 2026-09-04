@@ -7,6 +7,7 @@ use App\Enums\SharePermission;
 use App\Models\Note;
 use App\Models\ShareLink;
 use App\Models\User;
+use App\Notifications\AccessRevokedNotification;
 use App\Notifications\NoteSharedNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -46,6 +47,7 @@ class SharingService
         $this->logger->log(ActivityAction::ShareRemoved, $actor, $note, [
             'target_id' => $target->id,
         ]);
+        $target->notify(new AccessRevokedNotification($note, $actor));
     }
 
     public function createLink(Model $shareable, User $actor, SharePermission $permission = SharePermission::Read, ?\DateTimeInterface $expiresAt = null): ShareLink

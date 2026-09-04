@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UpdateController as AdminUpdateController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceModerationController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\CollabController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FavoriteController;
@@ -71,6 +72,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::delete('/api/notes/{note}', [NoteController::class, 'destroy'])->name('api.notes.destroy');
         Route::post('/api/notes/{note}/duplicate', [NoteController::class, 'duplicate'])->name('api.notes.duplicate');
         Route::patch('/api/workspaces/{workspace}/positions', [NoteController::class, 'positions'])->name('api.notes.positions');
+        Route::get('/api/notes/{note}/collab', [CollabController::class, 'show'])->name('api.notes.collab.show');
+        Route::post('/api/notes/{note}/collab', [CollabController::class, 'update'])->name('api.notes.collab.update');
+        Route::get('/api/notes/{note}/collab/stream', [CollabController::class, 'stream'])->name('api.notes.collab.stream');
+        Route::post('/api/notes/{note}/collab/leave', [CollabController::class, 'leave'])->name('api.notes.collab.leave');
 
         Route::post('/api/notes/{note}/restore', [TrashController::class, 'restore'])->name('api.notes.restore');
         Route::delete('/api/notes/{note}/force', [TrashController::class, 'forceDestroy'])->name('api.notes.force');

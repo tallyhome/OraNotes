@@ -16,6 +16,7 @@ const emit = defineEmits(['change', 'ready']);
 const host = ref(null);
 let editor = null;
 let destroyed = false;
+let pendingJson = null;
 
 function draftKey() {
     return props.noteId ? `oranotes:draft:${props.noteId}` : null;
@@ -96,6 +97,10 @@ function mountEditor() {
     if (draft && props.editable) {
         emit('change', { document: editor.getJSON(), html: editor.getHTML(), draft: true });
     }
+    if (pendingJson) {
+        applyJson(pendingJson);
+        pendingJson = null;
+    }
     emit('ready', editor);
 }
 
@@ -123,9 +128,31 @@ onUnmounted(() => {
     }
 });
 
+function applyJson(doc) {
+    if (typeof editor.setJSON === 'function') {
+        editor.setJSON(doc);
+        return;
+    }
+    if (typeof editor.setContent === 'function') {
+        editor.setContent(doc);
+    }
+}
+
+function setJSON(doc) {
+    if (!doc) {
+        return;
+    }
+    if (!editor) {
+        pendingJson = doc;
+        return;
+    }
+    applyJson(doc);
+}
+
 defineExpose({
     getJSON: () => editor?.getJSON(),
     getHTML: () => editor?.getHTML(),
+    setJSON,
     undo: () => editor?.undo(),
     redo: () => editor?.redo(),
     destroy: () => editor?.destroy(),

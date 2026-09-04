@@ -9,7 +9,7 @@ const props = defineProps({
     canEdit: { type: Boolean, default: true },
     focusNote: { type: String, default: null },
 });
-const emit = defineEmits(['edit', 'create', 'changed']);
+const emit = defineEmits(['edit', 'create', 'changed', 'removed']);
 
 const notes = ref(props.notes.map((n) => ({ ...n })));
 watch(() => props.notes, (value) => { notes.value = value.map((n) => ({ ...n })); });
@@ -25,13 +25,14 @@ const highlight = ref(props.focusNote);
 const context = ref(null);
 const spaceDown = ref(false);
 const viewport = ref(null);
+const marquee = ref(null);
 
 let dragging = null;
 let resizing = null;
 let panning = null;
-let box = null;
 let dirty = new Set();
 let posTimer = null;
+let camTimer = null;
 
 const worldStyle = computed(() => ({
     transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
@@ -39,6 +40,18 @@ const worldStyle = computed(() => ({
     width: '4000px',
     height: '3000px',
 }));
+
+const marqueeStyle = computed(() => {
+    if (!marquee.value) return {};
+    const x = Math.min(marquee.value.x0, marquee.value.x1);
+    const y = Math.min(marquee.value.y0, marquee.value.y1);
+    return {
+        left: `${x}px`,
+        top: `${y}px`,
+        width: `${Math.abs(marquee.value.x1 - marquee.value.x0)}px`,
+        height: `${Math.abs(marquee.value.y1 - marquee.value.y0)}px`,
+    };
+});
 
 function noteById(id) {
     return notes.value.find((n) => n.id === id);
@@ -82,15 +95,29 @@ async function flushPositions() {
         await http.patch(route('api.notes.positions', props.workspace.id), { positions });
     } catch {
         ids.forEach((id) => dirty.add(id));
+        clearTimeout(posTimer);
+        posTimer = setTimeout(flushPositions, 1500);
     }
 }
 
 async function persistCamera() {
     if (!props.canEdit) return;
-    await http.patch(route('workspaces.update', props.workspace.id), {
-        canvas_settings: { ...camera, snap: snap.value },
-    });
+    try {
+        await http.patch(route('workspaces.update', props.workspace.id), {
+            canvas_settings: { ...camera, snap: snap.value },
+        });
+    } catch {
+        clearTimeout(camTimer);
+        camTimer = setTimeout(persistCamera, 1500);
+    }
 }
+
+function scheduleCamera() {
+    clearTimeout(camTimer);
+    camTimer = setTimeout(persistCamera, 500);
+}
+
+watch(snap, scheduleCamera);
 
 function clientToWorld(event) {
     const rect = viewport.value.getBoundingClientRect();
@@ -103,6 +130,7 @@ function clientToWorld(event) {
 function onNotePointer(note, event) {
     if (event.button === 1 || spaceDown.value) return;
     event.preventDefault();
+    context.value = null;
     selectOne(note.id, event.shiftKey);
     if (!props.canEdit || note.is_locked) return;
     const start = clientToWorld(event);
@@ -125,9 +153,15 @@ function onPointerMove(event) {
         camera.x += event.clientX - panning.x;
         camera.y += event.clientY - panning.y;
         panning = { x: event.clientX, y: event.clientY };
+        scheduleCamera();
         return;
     }
+    if (!viewport.value) return;
     const world = clientToWorld(event);
+    if (marquee.value && !dragging && !resizing) {
+        marquee.value = { ...marquee.value, x1: world.x, y1: world.y };
+        return;
+    }
     if (dragging) {
         const dx = world.x - dragging.start.x;
         const dy = world.y - dragging.start.y;
@@ -152,7 +186,25 @@ function onPointerMove(event) {
     }
 }
 
+function finishMarquee() {
+    if (!marquee.value) return;
+    const x0 = Math.min(marquee.value.x0, marquee.value.x1);
+    const y0 = Math.min(marquee.value.y0, marquee.value.y1);
+    const x1 = Math.max(marquee.value.x0, marquee.value.x1);
+    const y1 = Math.max(marquee.value.y0, marquee.value.y1);
+    const next = new Set(selected.value);
+    if (Math.abs(x1 - x0) > 8 || Math.abs(y1 - y0) > 8) {
+        notes.value.forEach((n) => {
+            const hit = n.x < x1 && n.x + n.width > x0 && n.y < y1 && n.y + n.height > y0;
+            if (hit) next.add(n.id);
+        });
+        selected.value = next;
+    }
+    marquee.value = null;
+}
+
 function onPointerUp() {
+    finishMarquee();
     dragging = null;
     resizing = null;
     panning = null;
@@ -160,6 +212,7 @@ function onPointerUp() {
 }
 
 function onViewportDown(event) {
+    context.value = null;
     if (event.target !== viewport.value && !event.target.classList.contains('world')) {
         return;
     }
@@ -167,14 +220,18 @@ function onViewportDown(event) {
         panning = { x: event.clientX, y: event.clientY };
         return;
     }
-    selected.value = new Set();
-    context.value = null;
+    if (!event.shiftKey) {
+        selected.value = new Set();
+    }
+    const start = clientToWorld(event);
+    marquee.value = { x0: start.x, y0: start.y, x1: start.x, y1: start.y };
 }
 
 function onWheel(event) {
     event.preventDefault();
     const factor = event.deltaY < 0 ? 1.08 : 0.92;
     zoomAt(event, camera.zoom * factor);
+    scheduleCamera();
 }
 
 function zoomAt(event, nextZoom) {
@@ -217,7 +274,7 @@ function bring(dir) {
     selected.value.forEach((id) => {
         const n = noteById(id);
         if (!n) return;
-        n.z_index = dir === 'front' ? max + 1 : min - 1;
+        n.z_index = dir === 'front' ? max + 1 : Math.max(0, min > 0 ? min - 1 : 0);
         markDirty(id);
     });
 }
@@ -241,6 +298,7 @@ async function removeSelected() {
     for (const id of [...selected.value]) {
         await http.delete(route('api.notes.destroy', id));
         notes.value = notes.value.filter((n) => n.id !== id);
+        emit('removed', id);
     }
     selected.value = new Set();
 }
@@ -261,8 +319,17 @@ async function patchSelected(payload) {
     }
 }
 
-function copySelected() {
-    const payload = [...selected.value].map(noteById).filter(Boolean);
+async function copySelected() {
+    const payload = [];
+    for (const id of [...selected.value]) {
+        try {
+            const { data } = await http.get(route('api.notes.show', id));
+            payload.push(data.note);
+        } catch {
+            const fallback = noteById(id);
+            if (fallback) payload.push(fallback);
+        }
+    }
     localStorage.setItem('oranotes:clipboard', JSON.stringify(payload));
 }
 
@@ -274,12 +341,15 @@ async function pasteClipboard() {
         const { data } = await http.post(route('api.notes.store', props.workspace.id), {
             title: item.title,
             color: item.color,
-            x: item.x + 24,
-            y: item.y + 24,
+            x: (item.x ?? 80) + 24,
+            y: (item.y ?? 80) + 24,
             width: item.width,
             height: item.height,
             document: item.document,
             html_preview: item.html_preview,
+            status: item.status,
+            priority: item.priority,
+            tags: (item.tags || []).map((tag) => tag.name || tag).filter(Boolean),
         });
         notes.value.push(data.note);
     }
@@ -307,17 +377,18 @@ function centerOn(id) {
     camera.y = rect.height / 2 - (n.y + n.height / 2) * camera.zoom;
     highlight.value = id;
     selectOne(id);
+    scheduleCamera();
 }
 
 function onKey(event) {
     const meta = event.metaKey || event.ctrlKey;
-    if (['INPUT', 'TEXTAREA'].includes(event.target.tagName) || event.target.isContentEditable) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName) || event.target.isContentEditable) return;
     if (event.code === 'Space') spaceDown.value = true;
     if (event.key === 'n' && !meta) { event.preventDefault(); createNote(); }
     if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeSelected(); }
     if (meta && event.key === '0') { event.preventDefault(); resetZoom(); }
-    if (meta && (event.key === '=' || event.key === '+')) { event.preventDefault(); camera.zoom = Math.min(3, camera.zoom * 1.1); }
-    if (meta && event.key === '-') { event.preventDefault(); camera.zoom = Math.max(0.25, camera.zoom * 0.9); }
+    if (meta && (event.key === '=' || event.key === '+')) { event.preventDefault(); camera.zoom = Math.min(3, camera.zoom * 1.1); scheduleCamera(); }
+    if (meta && event.key === '-') { event.preventDefault(); camera.zoom = Math.max(0.25, camera.zoom * 0.9); scheduleCamera(); }
     if (event.key === 'd' && !meta) { event.preventDefault(); duplicateSelected(); }
     if (meta && event.key === 'c') copySelected();
     if (meta && event.key === 'v') pasteClipboard();
@@ -339,6 +410,7 @@ function onTouchMove(event) {
         const [a, b] = event.touches;
         const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
         camera.zoom = Math.min(3, Math.max(0.25, pinch.zoom * (dist / pinch.dist)));
+        scheduleCamera();
     }
 }
 
@@ -367,6 +439,7 @@ defineExpose({
         @pointerdown="onViewportDown"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
+        @pointercancel="onPointerUp"
         @wheel.prevent="onWheel"
         @touchstart="onTouchStart"
         @touchmove.prevent="onTouchMove"
@@ -383,6 +456,11 @@ defineExpose({
                 @resize="onResize(note, $event)"
                 @dblclick="emit('edit', note)"
                 @context="context = { x: $event.clientX, y: $event.clientY, note }"
+            />
+            <div
+                v-if="marquee"
+                class="pointer-events-none absolute border border-orange-500 bg-orange-400/10"
+                :style="marqueeStyle"
             />
         </div>
 

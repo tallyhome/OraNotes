@@ -48,6 +48,11 @@ class ShareLink extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'token';
+    }
+
     public function isUsable(): bool
     {
         if ($this->is_revoked) {

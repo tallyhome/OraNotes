@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SharePermission;
 use App\Models\Note;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\SharingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -110,5 +112,46 @@ class WorkspaceNoteTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('workspaces', ['name' => 'Bureau']);
+    }
+
+    #[Test]
+    public function negative_z_index_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['user_id' => $user->id]);
+        $note = Note::factory()->create(['workspace_id' => $workspace->id, 'user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->patchJson(route('api.notes.positions', $workspace), [
+                'positions' => [
+                    ['id' => $note->uuid, 'x' => 10, 'y' => 10, 'z_index' => -1],
+                ],
+            ])
+            ->assertUnprocessable();
+    }
+
+    #[Test]
+    public function search_finds_shared_note_for_recipient(): void
+    {
+        [$alice, $bob] = [User::factory()->create(), User::factory()->create()];
+        $workspace = Workspace::factory()->create(['user_id' => $alice->id]);
+        $note = Note::factory()->create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $alice->id,
+            'title' => 'Papillon partagé',
+            'text_content' => 'Papillon partagé',
+        ]);
+        app(SharingService::class)->shareNoteWithUser(
+            $note,
+            $alice,
+            $bob,
+            SharePermission::Read,
+        );
+
+        $this->actingAs($bob)
+            ->getJson(route('api.search', ['q' => 'Papillon']))
+            ->assertOk()
+            ->assertJsonCount(1, 'notes')
+            ->assertJsonPath('notes.0.title', 'Papillon partagé');
     }
 }

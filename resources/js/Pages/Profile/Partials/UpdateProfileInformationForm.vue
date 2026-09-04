@@ -3,6 +3,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import { applyTheme } from '@/composables/useTheme';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps({
@@ -38,7 +39,7 @@ const form = useForm({
         </header>
 
         <form
-            @submit.prevent="form.transform((data) => data).patch(route('profile.update'), { forceFormData: true })"
+            @submit.prevent="form.transform((data) => data).patch(route('profile.update'), { forceFormData: true, onSuccess: () => applyTheme(form.theme) })"
             class="mt-6 space-y-6"
         >
             <div>

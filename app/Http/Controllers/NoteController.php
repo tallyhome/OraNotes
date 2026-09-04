@@ -20,16 +20,26 @@ class NoteController extends Controller
     public function show(Request $request, Note $note): JsonResponse
     {
         $this->authorize('view', $note);
-        $note->load(['tags', 'author', 'workspace', 'shares.user']);
+        $note->load(['tags', 'author', 'workspace', 'shares.user', 'shareLinks']);
+        $canShare = $request->user()->can('share', $note);
 
         return response()->json([
             'note' => NoteResource::makeArray($note, includeDocument: true),
             'canEdit' => $request->user()->can('update', $note),
-            'shares' => $note->shares->map(fn ($share) => [
+            'canShare' => $canShare,
+            'shares' => $canShare ? $note->shares->map(fn ($share) => [
                 'id' => $share->id,
                 'user' => ['id' => $share->user->id, 'name' => $share->user->name, 'email' => $share->user->email],
                 'permission' => $share->permission->value,
-            ]),
+            ])->values() : [],
+            'links' => $canShare ? $note->shareLinks
+                ->filter(fn ($link) => $link->isUsable())
+                ->map(fn ($link) => [
+                    'token' => $link->token,
+                    'url' => route('shares.public', $link->token),
+                    'expires_at' => $link->expires_at?->toIso8601String(),
+                ])
+                ->values() : [],
         ]);
     }
 

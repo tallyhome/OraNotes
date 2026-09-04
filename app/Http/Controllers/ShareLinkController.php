@@ -40,19 +40,41 @@ class ShareLinkController extends Controller
     public function storeForWorkspace(Request $request, Workspace $workspace): JsonResponse
     {
         $this->authorize('manageMembers', $workspace);
-        $link = $this->sharing->createLink($workspace, $request->user(), SharePermission::Read);
+        $data = $request->validate([
+            'expires_at' => ['nullable', 'date', 'after:now'],
+        ]);
+
+        $link = $this->sharing->createLink(
+            $workspace,
+            $request->user(),
+            SharePermission::Read,
+            isset($data['expires_at']) ? new \DateTimeImmutable($data['expires_at']) : null,
+        );
 
         return response()->json([
             'link' => [
                 'token' => $link->token,
                 'url' => route('shares.public', $link->token),
+                'expires_at' => $link->expires_at?->toIso8601String(),
             ],
         ], 201);
     }
 
     public function destroy(Request $request, ShareLink $shareLink): JsonResponse
     {
-        abort_unless((int) $shareLink->created_by === (int) $request->user()->id || $request->user()->isAdmin(), 403);
+        $shareable = $shareLink->shareable;
+        $allowed = (int) $shareLink->created_by === (int) $request->user()->id
+            || $request->user()->isAdmin();
+
+        if (! $allowed && $shareable instanceof Note) {
+            $allowed = $request->user()->can('share', $shareable);
+        }
+
+        if (! $allowed && $shareable instanceof Workspace) {
+            $allowed = $request->user()->can('manageMembers', $shareable);
+        }
+
+        abort_unless($allowed, 403);
         $this->sharing->revokeLink($shareLink, $request->user());
 
         return response()->json(['ok' => true]);

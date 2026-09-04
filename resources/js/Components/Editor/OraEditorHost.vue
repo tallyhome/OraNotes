@@ -9,6 +9,7 @@ const props = defineProps({
     locale: { type: String, default: 'fr' },
     theme: { type: String, default: 'auto' },
     noteId: { type: String, default: null },
+    updatedAt: { type: String, default: null },
 });
 
 const emit = defineEmits(['change', 'ready']);
@@ -34,6 +35,30 @@ function clearDraft() {
     }
 }
 
+function readDraft() {
+    const key = draftKey();
+    if (!key) {
+        return null;
+    }
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed.document) {
+            return null;
+        }
+        if (props.updatedAt && parsed.at && parsed.at < Date.parse(props.updatedAt)) {
+            clearDraft();
+            return null;
+        }
+        return parsed.document;
+    } catch {
+        return null;
+    }
+}
+
 async function uploadImage(file) {
     const body = new FormData();
     body.append('file', file);
@@ -48,9 +73,10 @@ function mountEditor() {
     if (!host.value || !window.OraEditor) {
         return;
     }
+    const draft = readDraft();
     editor = new window.OraEditor({
         element: host.value,
-        content: props.content || undefined,
+        content: draft || props.content || undefined,
         editable: props.editable,
         toolbar: true,
         preset: 'full',
@@ -60,28 +86,20 @@ function mountEditor() {
         uploadImage,
     });
     editor.on('change', () => {
+        if (destroyed) {
+            return;
+        }
         const doc = editor.getJSON();
         persistDraft(doc);
         emit('change', { document: doc, html: editor.getHTML() });
     });
+    if (draft && props.editable) {
+        emit('change', { document: editor.getJSON(), html: editor.getHTML(), draft: true });
+    }
     emit('ready', editor);
 }
 
 onMounted(() => {
-    const key = draftKey();
-    if (key) {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-            try {
-                const parsed = JSON.parse(raw);
-                if (parsed.document) {
-                    emit('change', { document: parsed.document, html: '', draft: true });
-                }
-            } catch {
-                /* ignore */
-            }
-        }
-    }
     mountEditor();
 });
 

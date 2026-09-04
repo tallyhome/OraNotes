@@ -37,4 +37,14 @@ class OraDocumentTest extends TestCase
         $this->assertStringNotContainsString('script', $clean);
         $this->assertStringNotContainsString('onerror', $clean);
     }
+
+    #[Test]
+    public function html_sanitizer_strips_style_attributes(): void
+    {
+        $clean = HtmlSanitizer::clean('<p style="background:url(javascript:alert(1))">ok</p>');
+
+        $this->assertStringContainsString('<p', $clean);
+        $this->assertStringContainsString('ok', $clean);
+        $this->assertStringNotContainsString('style', $clean);
+    }
 }

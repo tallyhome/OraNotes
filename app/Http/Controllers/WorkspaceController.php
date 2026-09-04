@@ -22,18 +22,35 @@ class WorkspaceController extends Controller
     {
         $this->authorize('view', $workspace);
 
-        $workspace->load(['owner', 'members']);
+        $workspace->load(['owner', 'members', 'shareLinks']);
+
+        $user = $request->user();
+        $canManage = $user?->can('manageMembers', $workspace) ?? false;
 
         $notes = $workspace->notes()
             ->with(['tags', 'author'])
             ->where('is_archived', false)
-            ->get();
+            ->get()
+            ->filter(fn ($note) => $user?->can('view', $note) ?? false)
+            ->values();
 
         return Inertia::render('Desktop/Show', [
             'workspace' => WorkspaceResource::makeArray($workspace, includeMembers: true),
             'notes' => $notes->map(fn ($note) => NoteResource::makeArray($note))->values(),
-            'canEdit' => $request->user()->can('update', $workspace),
+            'canEdit' => $user?->can('update', $workspace) ?? false,
+            'canManage' => $canManage,
+            'isOwner' => $user ? $workspace->isOwnedBy($user) : false,
             'focusNote' => $request->query('note'),
+            'shareLinks' => $canManage
+                ? $workspace->shareLinks
+                    ->filter(fn ($link) => $link->isUsable())
+                    ->map(fn ($link) => [
+                        'token' => $link->token,
+                        'url' => route('shares.public', $link->token),
+                        'expires_at' => $link->expires_at?->toIso8601String(),
+                    ])
+                    ->values()
+                : [],
         ]);
     }
 
@@ -50,10 +67,15 @@ class WorkspaceController extends Controller
 
     public function update(WorkspaceUpdateRequest $request, Workspace $workspace): RedirectResponse|JsonResponse
     {
+        $wasArchived = $workspace->is_archived;
         $workspace = $this->workspaces->update($workspace, $request->user(), $request->validated());
 
         if ($request->wantsJson()) {
             return response()->json(['workspace' => WorkspaceResource::makeArray($workspace)]);
+        }
+
+        if ($workspace->is_archived && ! $wasArchived) {
+            return redirect()->route('dashboard');
         }
 
         return back();
@@ -69,7 +91,7 @@ class WorkspaceController extends Controller
 
     public function duplicate(Request $request, Workspace $workspace): RedirectResponse|JsonResponse
     {
-        $this->authorize('view', $workspace);
+        $this->authorize('update', $workspace);
         $copy = $this->workspaces->duplicate($workspace, $request->user());
 
         if ($request->wantsJson()) {

@@ -11,15 +11,23 @@ class AccessService
 {
     public function workspacePermission(User $user, Workspace $workspace): ?SharePermission
     {
-        if ($user->isAdmin()) {
-            return SharePermission::Edit;
-        }
-
         if ($workspace->isOwnedBy($user)) {
             return SharePermission::Edit;
         }
 
         return $workspace->memberPermission($user);
+    }
+
+    public function canAccessWorkspacePage(User $user, Workspace $workspace): bool
+    {
+        if ($this->canViewWorkspace($user, $workspace)) {
+            return true;
+        }
+
+        return Note::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereHas('shares', fn ($q) => $q->where('user_id', $user->id))
+            ->exists();
     }
 
     public function canViewWorkspace(User $user, Workspace $workspace): bool
@@ -36,23 +44,22 @@ class AccessService
 
     public function notePermission(User $user, Note $note): ?SharePermission
     {
-        if ($user->isAdmin()) {
-            return SharePermission::Edit;
-        }
-
         $note->loadMissing('workspace');
 
         if ($note->workspace && $this->canEditWorkspace($user, $note->workspace)) {
             return SharePermission::Edit;
         }
 
-        if ($note->workspace && $this->canViewWorkspace($user, $note->workspace)) {
-            $share = $note->sharePermissionFor($user);
-
-            return $share ?? SharePermission::Read;
+        $direct = $note->sharePermissionFor($user);
+        if ($direct !== null) {
+            return $direct;
         }
 
-        return $note->sharePermissionFor($user);
+        if ($note->workspace && $this->canViewWorkspace($user, $note->workspace)) {
+            return SharePermission::Read;
+        }
+
+        return null;
     }
 
     public function canViewNote(User $user, Note $note): bool

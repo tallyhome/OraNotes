@@ -34,9 +34,12 @@ class PublicShareController extends Controller
 
             return Inertia::render('Desktop/Show', [
                 'workspace' => WorkspaceResource::makeArray($shareable),
-                'notes' => $notes->map(fn (Note $n) => NoteResource::makeArray($n))->values(),
+                'notes' => $notes->map(fn (Note $n) => NoteResource::makeArray($n, includeDocument: true))->values(),
                 'canEdit' => false,
+                'canManage' => false,
+                'isOwner' => false,
                 'publicShare' => true,
+                'shareLinks' => [],
             ]);
         }
 

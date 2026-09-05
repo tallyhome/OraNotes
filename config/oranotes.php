@@ -11,6 +11,7 @@ return [
         'allow_prerelease' => env('ORANOTES_UPDATE_PRERELEASE', false),
         'min_php' => '8.3.0',
         'timeout' => 20,
+        'ca_bundle' => env('ORANOTES_CA_BUNDLE', env('CURL_CA_BUNDLE')),
     ],
 
     'install' => [

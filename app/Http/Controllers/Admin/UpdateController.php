@@ -13,21 +13,10 @@ class UpdateController extends Controller
 {
     public function __invoke(UpdateService $updates): Response
     {
-        try {
-            $status = $updates->status();
-            $compat = $status['latest']
-                ? $updates->compatibility($status['latest'])
-                : ['ok' => true, 'errors' => []];
-        } catch (\Throwable $e) {
-            $status = [
-                'current' => config('oranotes.version'),
-                'latest' => null,
-                'available' => false,
-                'changelog' => null,
-                'error' => $e->getMessage(),
-            ];
-            $compat = ['ok' => false, 'errors' => [$e->getMessage()]];
-        }
+        $status = $updates->status();
+        $compat = $status['latest']
+            ? $updates->compatibility($status['latest'])
+            : ['ok' => true, 'errors' => []];
 
         return Inertia::render('Admin/Updates', [
             'status' => $status,

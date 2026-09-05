@@ -37,6 +37,13 @@ function healthLabel(stats) {
             Une mise à jour {{ update.latest }} est disponible (version actuelle {{ stats.oranotes_version }}).
             <Link href="/admin/updates" class="ml-2 font-medium underline">Voir les mises à jour</Link>
         </div>
+        <div
+            v-else-if="update?.error_code === 'ssl_ca'"
+            class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+            Vérification des mises à jour bloquée : certificat SSL / bundle CA manquant.
+            <Link href="/admin/updates" class="ml-2 font-medium underline">Voir la marche à suivre</Link>
+        </div>
 
         <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <AdminKpiCard label="Utilisateurs" :value="stats.users" :hint="`${stats.active_users} actifs · ${stats.disabled_users} désactivés · ${stats.new_users_7d} sur 7 j`" />

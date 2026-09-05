@@ -39,7 +39,15 @@
   <li>Mode maintenance, overlay du code (hors <code>.env</code>, <code>storage</code>, <code>node_modules</code>), migrations, caches.</li>
   <li>Échec : tentative de restauration, sortie de maintenance, logs précis. <strong>Le rollback n’est pas atomique.</strong></li>
 </ol>
-<p>Protections : refus de downgrade, traversal <code>..</code>, écriture hors projet, SSRF (hôte figé <code>api.github.com</code>).</p>
+<p>Protections : refus de downgrade, traversal <code>..</code>, écriture hors projet, SSRF (hôte figé <code>api.github.com</code>). La vérification TLS n’est <strong>jamais</strong> désactivée.</p>
+<h2>Certificat SSL / bundle CA (Windows, XAMPP, Laragon, WAMP)</h2>
+<p>Si la page Admin → Mises à jour indique un certificat SSL manquant, PHP/cURL n’a pas de fichier d’autorités. Ce n’est pas un problème GitHub.</p>
+<ol>
+  <li>Télécharger un <code>cacert.pem</code> Mozilla (bundle d’autorités).</li>
+  <li>Dans <code>php.ini</code> : <code>curl.cainfo</code> et <code>openssl.cafile</code> = chemin absolu du fichier, puis redémarrer PHP/Apache.</li>
+  <li>Ou définir <code>ORANOTES_CA_BUNDLE</code> (ou <code>CURL_CA_BUNDLE</code>) vers ce chemin.</li>
+  <li>Ou placer le fichier dans <code>storage/app/cacert.pem</code>.</li>
+</ol>
 
     <footer>OraNotes — MIT. Les schémas sont des schémas, pas des captures de serveurs réels.</footer>
   </div>

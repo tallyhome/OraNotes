@@ -8,6 +8,7 @@ Refonte UX de l’administration et correction de la page Bureaux vide.
 - Correctif : `navWorkspaces` dédié à la navigation, itération de `workspaces.data`, résolution des actions par UUID (y compris corbeille).
 - Shell admin autonome (sidebar groupée, état actif, mobile, retour à l’application)
 - Tableaux, filtres, états vides, pagination et libellés français sur toutes les pages admin
+- Mises à jour : erreur SSL/cURL 60 (bundle CA manquant, fréquent sous Windows) affichée en français avec marche à suivre ; `ORANOTES_CA_BUNDLE` / `composer/ca-bundle` ; jamais `verify => false`
 
 ## 1.1.1 — 2026-09-05
 

@@ -6,7 +6,9 @@ use App\Http\Requests\WorkspaceStoreRequest;
 use App\Http\Requests\WorkspaceUpdateRequest;
 use App\Http\Resources\NoteResource;
 use App\Http\Resources\WorkspaceResource;
+use App\Models\Note;
 use App\Models\Workspace;
+use App\Services\Authorization\AccessService;
 use App\Services\WorkspaceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +18,10 @@ use Inertia\Response;
 
 class WorkspaceController extends Controller
 {
-    public function __construct(private WorkspaceService $workspaces) {}
+    public function __construct(
+        private WorkspaceService $workspaces,
+        private AccessService $access,
+    ) {}
 
     public function show(Request $request, Workspace $workspace): Response
     {
@@ -26,13 +31,31 @@ class WorkspaceController extends Controller
 
         $user = $request->user();
         $canManage = $user?->can('manageMembers', $workspace) ?? false;
+        $isAdminViewer = $user !== null && $this->access->isActiveAdmin($user);
 
-        $notes = $workspace->notes()
-            ->with(['tags', 'author'])
-            ->where('is_archived', false)
-            ->get()
+        $notesQuery = $workspace->notes()->with(['tags', 'author']);
+        if (! $isAdminViewer) {
+            $notesQuery->where('is_archived', false);
+        }
+
+        $notes = $notesQuery->get()
             ->filter(fn ($note) => $user?->can('view', $note) ?? false)
             ->values();
+
+        $focus = $request->query('note');
+        if ($isAdminViewer && is_string($focus) && $focus !== '') {
+            $alreadyPresent = $notes->contains(fn (Note $note): bool => $note->uuid === $focus);
+            if (! $alreadyPresent) {
+                $hidden = $workspace->notes()
+                    ->withTrashed()
+                    ->with(['tags', 'author'])
+                    ->where('uuid', $focus)
+                    ->first();
+                if ($hidden && $user->can('view', $hidden)) {
+                    $notes->push($hidden);
+                }
+            }
+        }
 
         return Inertia::render('Desktop/Show', [
             'workspace' => WorkspaceResource::makeArray(

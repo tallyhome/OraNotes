@@ -141,7 +141,12 @@ async function purge(ws) {
                             <td class="px-4 py-3 text-stone-500">{{ formatDateTime(ws.updated_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap gap-2">
-                                    <Link v-if="!ws.is_trashed" :href="`/workspaces/${ws.id}`" class="text-orange-700 underline">Ouvrir</Link>
+                                    <Link
+                                        :href="route('workspaces.show', ws.id)"
+                                        class="text-orange-700 underline"
+                                    >
+                                        {{ ws.is_trashed ? 'Voir' : 'Ouvrir' }}
+                                    </Link>
                                     <button type="button" class="underline" @click="lockToggle(ws)">
                                         {{ ws.is_locked ? 'Déverrouiller' : 'Verrouiller' }}
                                     </button>

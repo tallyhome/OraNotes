@@ -20,8 +20,17 @@ class AccessService
         return $workspace->memberPermission($user);
     }
 
+    public function isActiveAdmin(User $user): bool
+    {
+        return $user->isAdmin() && $user->is_active;
+    }
+
     public function canAccessWorkspacePage(User $user, Workspace $workspace): bool
     {
+        if ($this->isActiveAdmin($user)) {
+            return true;
+        }
+
         if ($workspace->trashed()) {
             return $workspace->isOwnedBy($user);
         }
@@ -43,6 +52,10 @@ class AccessService
 
     public function canViewWorkspace(User $user, Workspace $workspace): bool
     {
+        if ($this->isActiveAdmin($user)) {
+            return true;
+        }
+
         if ($workspace->trashed()) {
             return $workspace->isOwnedBy($user);
         }
@@ -83,6 +96,10 @@ class AccessService
 
     public function canViewNote(User $user, Note $note): bool
     {
+        if ($this->isActiveAdmin($user)) {
+            return true;
+        }
+
         if ($note->trashed()) {
             return false;
         }
@@ -120,11 +137,15 @@ class AccessService
     }
 
     /**
-     * Archived / hidden notes: author, workspace owner or workspace editor only.
+     * Archived / hidden notes: author, workspace owner, workspace editor or active admin.
      * Knowing a UUID or holding a former share is not enough.
      */
     public function canManageHiddenNote(User $user, Note $note): bool
     {
+        if ($this->isActiveAdmin($user)) {
+            return true;
+        }
+
         $note->loadMissing('workspace');
 
         if ((int) $note->user_id === (int) $user->id) {

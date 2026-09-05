@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminBadge from '@/Components/Admin/AdminBadge.vue';
 import { Head, router } from '@inertiajs/vue3';
+import { confirm } from '@/lib/swal';
 
 const props = defineProps({
     status: Object,
@@ -9,8 +10,14 @@ const props = defineProps({
     repository: String,
 });
 
-function apply() {
-    if (!confirm('Sauvegarder puis appliquer la mise à jour officielle ? Un rollback n’est pas atomique.')) {
+async function apply() {
+    const ok = await confirm({
+        title: 'Appliquer la mise à jour officielle ?',
+        text: 'Une sauvegarde sera créée. Un rollback n’est pas atomique.',
+        confirmText: 'Appliquer',
+        destructive: true,
+    });
+    if (!ok) {
         return;
     }
     router.post(route('admin.updates.apply'));

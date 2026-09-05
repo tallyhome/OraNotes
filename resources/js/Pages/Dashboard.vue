@@ -1,5 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { prompt } from '@/lib/swal';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 defineProps({
@@ -10,8 +11,14 @@ defineProps({
     shared: Array,
 });
 
-function createWorkspace() {
-    const name = window.prompt('Nom du bureau', 'Nouveau bureau');
+async function createWorkspace() {
+    const name = await prompt({
+        title: 'Nouveau bureau',
+        text: 'Choisissez un nom pour ce bureau.',
+        inputLabel: 'Nom du bureau',
+        inputValue: 'Nouveau bureau',
+        confirmText: 'Créer',
+    });
     if (!name) {
         return;
     }

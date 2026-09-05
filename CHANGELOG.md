@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.1 — 2026-09-05
+
+Remplacement des popups natifs du navigateur par SweetAlert2.
+
+- Helper partagé `resources/js/lib/swal.js` (toast, succès, erreur, info, confirm, prompt)
+- Thème papier / stone / orange, boutons FR (Annuler / Confirmer / OK), dark mode
+- Accueil et bureau : création de bureau (prompt)
+- Bureau : archivage, verrouillage / déverrouillage, corbeille, alerte si verrouillé
+- Corbeille : purge note, purge bureau (saisie du nom si notes)
+- Admin : purge bureaux (saisie du nom), verrouillage, purge notes, corbeille utilisateur, application des mises à jour
+
 ## 1.2.0 — 2026-09-05
 
 Refonte UX de l’administration et correction de la page Bureaux vide.

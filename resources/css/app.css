@@ -76,3 +76,100 @@ body {
 .ora-editor-host {
     min-height: 360px;
 }
+
+.ora-swal-popup {
+    background: #fbf7ef !important;
+    color: #1c1917 !important;
+    border-radius: 1rem !important;
+    font-family: Outfit, Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    box-shadow: 0 18px 40px rgba(28, 25, 23, 0.18) !important;
+}
+
+.ora-swal-title {
+    color: inherit !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+}
+
+.ora-swal-html {
+    color: #57534e !important;
+    font-size: 0.9rem !important;
+}
+
+.ora-swal-input {
+    border: 1px solid #d6d3d1 !important;
+    border-radius: 0.75rem !important;
+    background: #fff !important;
+    color: #1c1917 !important;
+    box-shadow: none !important;
+}
+
+.ora-swal-actions {
+    gap: 0.5rem !important;
+}
+
+.ora-swal-confirm,
+.ora-swal-cancel {
+    margin: 0 !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+.ora-swal-confirm {
+    background: #c2410c !important;
+    color: #fff !important;
+}
+
+.ora-swal-confirm-danger {
+    background: #dc2626 !important;
+}
+
+.ora-swal-cancel {
+    background: transparent !important;
+    border: 1px solid #d6d3d1 !important;
+    color: #44403c !important;
+}
+
+.ora-swal-timer {
+    background: #c2410c !important;
+}
+
+.dark .ora-swal-popup {
+    background: #1c1917 !important;
+    color: #f5f0e8 !important;
+}
+
+.dark .ora-swal-html {
+    color: #a8a29e !important;
+}
+
+.dark .ora-swal-input {
+    background: #0c0a09 !important;
+    border-color: #44403c !important;
+    color: #f5f0e8 !important;
+}
+
+.dark .ora-swal-confirm {
+    background: #ea580c !important;
+}
+
+.dark .ora-swal-confirm-danger {
+    background: #dc2626 !important;
+}
+
+.dark .ora-swal-cancel {
+    border-color: #57534e !important;
+    color: #e7e5e4 !important;
+}
+
+.swal2-container.swal2-backdrop-show,
+.swal2-container.swal2-noanimation {
+    background: rgba(28, 25, 23, 0.45) !important;
+}
+
+.dark .swal2-container.swal2-backdrop-show,
+.dark .swal2-container.swal2-noanimation {
+    background: rgba(12, 10, 9, 0.65) !important;
+}

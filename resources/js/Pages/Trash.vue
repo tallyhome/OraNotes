@@ -2,15 +2,24 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import http from '@/composables/useHttp';
+import { confirm, prompt } from '@/lib/swal';
 
-const props = defineProps({ notes: Array, workspaces: { type: Array, default: () => [] } });
+defineProps({ notes: Array, workspaces: { type: Array, default: () => [] } });
 
 async function restore(note) {
     await http.post(route('api.notes.restore', note.id));
     router.reload();
 }
 async function purge(note) {
-    if (!confirm('Supprimer définitivement cette note ?')) return;
+    const ok = await confirm({
+        title: 'Supprimer définitivement cette note ?',
+        text: 'Cette action est irréversible.',
+        confirmText: 'Supprimer',
+        destructive: true,
+    });
+    if (!ok) {
+        return;
+    }
     await http.delete(route('api.notes.force', note.id));
     router.reload();
 }
@@ -21,10 +30,31 @@ async function restoreWorkspace(ws) {
 }
 
 async function purgeWorkspace(ws) {
-    const confirmName = ws.notes_count > 0
-        ? window.prompt(`Ce bureau contient ${ws.notes_count} note(s). Tapez « ${ws.name} » pour confirmer la suppression définitive.`)
-        : ws.name;
-    if (confirmName !== ws.name) return;
+    let confirmName = ws.name;
+    if (ws.notes_count > 0) {
+        confirmName = await prompt({
+            title: 'Supprimer définitivement ce bureau ?',
+            text: `Ce bureau contient ${ws.notes_count} note(s). Tapez « ${ws.name} » pour confirmer.`,
+            inputLabel: 'Nom du bureau',
+            inputPlaceholder: ws.name,
+            expected: ws.name,
+            confirmText: 'Supprimer',
+            destructive: true,
+        });
+        if (!confirmName) {
+            return;
+        }
+    } else {
+        const ok = await confirm({
+            title: 'Supprimer définitivement ce bureau ?',
+            text: 'Cette action est irréversible.',
+            confirmText: 'Supprimer',
+            destructive: true,
+        });
+        if (!ok) {
+            return;
+        }
+    }
     await http.delete(route('workspaces.force', ws.id), { data: { confirm_name: confirmName } });
     router.reload();
 }

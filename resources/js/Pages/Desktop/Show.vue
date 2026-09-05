@@ -5,6 +5,7 @@ import EditModal from '@/Components/Editor/EditModal.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import http from '@/composables/useHttp';
+import { confirm, info, prompt } from '@/lib/swal';
 
 const props = defineProps({
     workspace: Object,
@@ -122,8 +123,15 @@ function saveSettings() {
     });
 }
 
-function archiveWorkspace() {
-    if (!confirm('Archiver ce bureau ?')) return;
+async function archiveWorkspace() {
+    const ok = await confirm({
+        title: 'Archiver ce bureau ?',
+        text: 'Il disparaîtra de l’accueil et pourra être restauré plus tard.',
+        confirmText: 'Archiver',
+    });
+    if (!ok) {
+        return;
+    }
     router.patch(route('workspaces.update', props.workspace.id), { is_archived: true });
 }
 
@@ -131,26 +139,55 @@ function duplicateWorkspace() {
     router.post(route('workspaces.duplicate', props.workspace.id));
 }
 
-function deleteWorkspace() {
+async function deleteWorkspace() {
     if (props.workspace.is_locked) {
-        window.alert('Ce bureau est verrouillé. Déverrouillez-le avant de le supprimer.');
+        await info(
+            'Bureau verrouillé',
+            'Déverrouillez-le avant de le mettre à la corbeille.',
+        );
         return;
     }
     const count = props.notes?.length || 0;
-    if (!confirm(count ? `Mettre ce bureau et ses ${count} notes à la corbeille ?` : 'Mettre ce bureau à la corbeille ?')) {
+    const ok = await confirm({
+        title: count
+            ? `Mettre ce bureau et ses ${count} notes à la corbeille ?`
+            : 'Mettre ce bureau à la corbeille ?',
+        text: 'Vous pourrez les restaurer depuis la corbeille.',
+        confirmText: 'Mettre à la corbeille',
+        destructive: true,
+    });
+    if (!ok) {
         return;
     }
     router.delete(route('workspaces.destroy', props.workspace.id));
 }
 
-function toggleLock() {
-    const action = props.workspace.is_locked ? 'unlock' : 'lock';
-    router.post(route(`workspaces.${action}`, props.workspace.id));
+async function toggleLock() {
+    const locked = props.workspace.is_locked;
+    const ok = await confirm({
+        title: locked ? 'Déverrouiller ce bureau ?' : 'Verrouiller ce bureau ?',
+        text: locked
+            ? 'Le bureau pourra à nouveau être modifié ou mis à la corbeille.'
+            : 'Un bureau verrouillé ne peut pas être mis à la corbeille.',
+        confirmText: locked ? 'Déverrouiller' : 'Verrouiller',
+    });
+    if (!ok) {
+        return;
+    }
+    router.post(route(`workspaces.${locked ? 'unlock' : 'lock'}`, props.workspace.id));
 }
 
-function createWorkspace() {
-    const name = window.prompt('Nom du bureau', 'Nouveau bureau');
-    if (!name) return;
+async function createWorkspace() {
+    const name = await prompt({
+        title: 'Nouveau bureau',
+        text: 'Choisissez un nom pour ce bureau.',
+        inputLabel: 'Nom du bureau',
+        inputValue: 'Nouveau bureau',
+        confirmText: 'Créer',
+    });
+    if (!name) {
+        return;
+    }
     router.post(route('workspaces.store'), { name, icon: '🗂️', color: 'yellow' });
 }
 </script>

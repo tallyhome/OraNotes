@@ -113,7 +113,13 @@ async function purge(note) {
                             <td class="px-4 py-3 text-stone-500">{{ formatDateTime(note.updated_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap gap-2">
-                                    <Link v-if="note.workspace_id && !note.is_trashed" :href="`/workspaces/${note.workspace_id}?note=${note.id}`" class="text-orange-700 underline">Ouvrir</Link>
+                                    <Link
+                                        v-if="note.workspace_id"
+                                        :href="route('workspaces.show', { workspace: note.workspace_id, note: note.id })"
+                                        class="text-orange-700 underline"
+                                    >
+                                        {{ note.is_trashed ? 'Voir' : 'Ouvrir' }}
+                                    </Link>
                                     <button v-if="note.is_archived || note.is_trashed" type="button" class="underline" @click="restore(note)">Restaurer</button>
                                     <button type="button" class="text-red-600" @click="purge(note)">Purger</button>
                                 </div>

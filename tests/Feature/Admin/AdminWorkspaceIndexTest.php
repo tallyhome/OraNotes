@@ -88,6 +88,7 @@ class AdminWorkspaceIndexTest extends TestCase
                 ->where('notes.data.0.title', 'Stand-up')
                 ->where('notes.data.0.author_email', 'bob@example.test')
                 ->where('notes.data.0.workspace_name', 'Sprint')
+                ->where('notes.data.0.workspace_id', $workspace->uuid)
                 ->where('notes.data.0.is_trashed', false));
     }
 

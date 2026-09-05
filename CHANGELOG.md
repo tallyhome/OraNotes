@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.2 — 2026-09-05
+
+Un administrateur actif peut ouvrir le bureau et la note d’un autre utilisateur (modération).
+
+- Cause : `AccessService::canViewNote` / `canAccessWorkspacePage` n’avaient pas de bypass `$user->isAdmin()`.
+- Correctif : admin actif autorisé à voir notes et bureaux (y compris archivés / corbeille) ; canvas en lecture seule.
+- Admin → Notes : liens « Ouvrir » / « Voir » vers `/workspaces/{uuid}?note=`
+- Les partages publics et téléchargements anonymes restent inchangés.
+
 ## 1.2.1 — 2026-09-05
 
 Remplacement des popups natifs du navigateur par SweetAlert2.

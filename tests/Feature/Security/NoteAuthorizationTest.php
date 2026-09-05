@@ -147,7 +147,7 @@ class NoteAuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function admin_cannot_silently_open_another_users_note(): void
+    public function admin_can_view_another_users_note_via_api(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         [$alice] = $this->twoUsers();
@@ -155,7 +155,9 @@ class NoteAuthorizationTest extends TestCase
 
         $this->actingAs($admin)
             ->getJson(route('api.notes.show', $note))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertJsonPath('note.id', $note->uuid)
+            ->assertJsonPath('canEdit', false);
     }
 
     #[Test]

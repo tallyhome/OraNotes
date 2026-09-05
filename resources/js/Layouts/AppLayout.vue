@@ -7,7 +7,11 @@ import { applyTheme } from '@/composables/useTheme';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
-const workspaces = computed(() => page.props.workspaces || []);
+const workspaces = computed(() => {
+    const shared = page.props.navWorkspaces ?? page.props.workspaces;
+
+    return Array.isArray(shared) ? shared : [];
+});
 const paletteOpen = ref(false);
 const mobileNav = ref(false);
 

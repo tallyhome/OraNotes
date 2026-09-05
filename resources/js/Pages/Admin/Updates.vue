@@ -1,27 +1,55 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminBadge from '@/Components/Admin/AdminBadge.vue';
 import { Head, router } from '@inertiajs/vue3';
-const props = defineProps({ status: Object, compatibility: Object, repository: String });
+
+const props = defineProps({
+    status: Object,
+    compatibility: Object,
+    repository: String,
+});
 
 function apply() {
-    if (!confirm('Sauvegarder puis appliquer la mise à jour officielle ? Un rollback n’est pas atomique.')) return;
+    if (!confirm('Sauvegarder puis appliquer la mise à jour officielle ? Un rollback n’est pas atomique.')) {
+        return;
+    }
     router.post(route('admin.updates.apply'));
 }
 </script>
+
 <template>
     <Head title="Mises à jour" />
-    <AdminLayout>
-        <h1 class="mb-4 text-2xl font-semibold">Mises à jour</h1>
-        <p class="mb-2 text-sm">Source officielle : GitHub {{ repository }} — aucune URL arbitraire n’est acceptée.</p>
-        <p class="mb-2">Actuelle : <strong>{{ status.current }}</strong></p>
-        <p class="mb-2">Disponible : <strong>{{ status.latest || '—' }}</strong></p>
-        <pre v-if="status.changelog" class="mb-4 max-h-64 overflow-auto rounded bg-stone-100 p-3 text-xs dark:bg-stone-900">{{ status.changelog }}</pre>
-        <ul v-if="compatibility?.errors?.length" class="mb-4 text-sm text-red-600">
+    <AdminLayout title="Mises à jour" description="Source officielle : GitHub uniquement. Aucune URL arbitraire n’est acceptée.">
+        <div class="mb-6 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900">
+                <p class="text-xs uppercase text-stone-400">Dépôt</p>
+                <p class="mt-1 font-medium">{{ repository }}</p>
+            </div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900">
+                <p class="text-xs uppercase text-stone-400">État</p>
+                <p class="mt-2">
+                    <AdminBadge :tone="status.available ? 'warning' : 'success'">
+                        {{ status.available ? 'Mise à jour disponible' : 'À jour' }}
+                    </AdminBadge>
+                </p>
+            </div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900">
+                <p class="text-xs uppercase text-stone-400">Version actuelle</p>
+                <p class="mt-1 text-xl font-semibold">{{ status.current }}</p>
+            </div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900">
+                <p class="text-xs uppercase text-stone-400">Version disponible</p>
+                <p class="mt-1 text-xl font-semibold">{{ status.latest || '—' }}</p>
+            </div>
+        </div>
+
+        <pre v-if="status.changelog" class="mb-4 max-h-64 overflow-auto rounded-2xl bg-stone-100 p-4 text-xs dark:bg-stone-900">{{ status.changelog }}</pre>
+        <ul v-if="compatibility?.errors?.length" class="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30">
             <li v-for="err in compatibility.errors" :key="err">{{ err }}</li>
         </ul>
         <button
             v-if="status.available && compatibility?.ok"
-            class="rounded bg-orange-600 px-4 py-2 text-white"
+            class="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white"
             @click="apply"
         >
             Télécharger et appliquer

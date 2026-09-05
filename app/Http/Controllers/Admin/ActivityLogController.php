@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ActivityAction;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class ActivityLogController extends Controller
                 'created_at' => $log->created_at?->toIso8601String(),
             ]),
             'filters' => $request->only(['action']),
+            'actions' => array_map(fn (ActivityAction $action) => $action->value, ActivityAction::cases()),
         ]);
     }
 }

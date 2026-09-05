@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — 2026-09-05
+
+Refonte UX de l’administration et correction de la page Bureaux vide.
+
+- Cause : le paginateur Inertia `workspaces` écrasait le prop partagé (tableau de bureaux). `CommandPalette` appelait `.forEach` sur l’objet paginateur et faisait planter la page.
+- Correctif : `navWorkspaces` dédié à la navigation, itération de `workspaces.data`, résolution des actions par UUID (y compris corbeille).
+- Shell admin autonome (sidebar groupée, état actif, mobile, retour à l’application)
+- Tableaux, filtres, états vides, pagination et libellés français sur toutes les pages admin
+
 ## 1.1.1 — 2026-09-05
 
 Durabilité et concurrence de la collaboration (SSE + Yjs).

@@ -18,7 +18,10 @@ const commands = computed(() => {
         { id: 'profile', label: 'Profil et thème', url: '/profile' },
         { id: 'logout', label: 'Déconnexion', url: '/logout', method: 'post' },
     ];
-    (page.props.workspaces || []).forEach((ws) => {
+    const navWorkspaces = Array.isArray(page.props.navWorkspaces)
+        ? page.props.navWorkspaces
+        : (Array.isArray(page.props.workspaces) ? page.props.workspaces : []);
+    navWorkspaces.forEach((ws) => {
         items.push({ id: `ws-${ws.id}`, label: `Bureau : ${ws.name}`, url: `/workspaces/${ws.id}` });
     });
     if (page.props.auth.user?.is_admin) {

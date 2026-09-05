@@ -74,5 +74,10 @@ class AdminUserManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.security'))->assertOk();
         $this->actingAs($admin)->get(route('admin.storage'))->assertOk();
         $this->actingAs($admin)->get(route('admin.users.show', $admin))->assertOk();
+        $this->actingAs($admin)->get(route('admin.users.index'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.workspaces.index'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.notes.index'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.activity'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.updates'))->assertOk();
     }
 }

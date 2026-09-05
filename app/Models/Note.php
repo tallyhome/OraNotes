@@ -95,6 +95,11 @@ class Note extends Model
         return $this->hasMany(NoteVersion::class);
     }
 
+    public function collabEvents(): HasMany
+    {
+        return $this->hasMany(CollabEvent::class);
+    }
+
     public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class);

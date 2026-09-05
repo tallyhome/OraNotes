@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.1 — 2026-09-05
+
+Durabilité et concurrence de la collaboration (SSE + Yjs).
+
+- Journal `collab_events` en base (insert atomique) à la place de `Cache::get`/`put`
+- Snapshot protégé par `lockForUpdate` : un checkpoint périmé n’écrase plus l’état
+- Les snapshots rejetés restent dans le journal pour fusion Yjs
+- SSE honore `Last-Event-ID` et `?after=` ; fin de cycle sans `leave()` implicite
+- Bootstrap = snapshot + queue d’updates ; reconnexion client recharge puis fusionne
+- Présence sous `Cache::lock` + TTL ; throttle d’écriture collab relevé (240/min)
+- Tests de régression concurrence / reconstruction ; docs d’architecture honnêtes
+
 ## 1.1.0 — 2026-09-04
 
 Fonctionnalités et durcissement depuis 1.0.3.

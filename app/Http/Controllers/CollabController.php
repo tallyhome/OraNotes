@@ -20,9 +20,11 @@ class CollabController extends Controller
     {
         $this->authorize('view', $note);
         $members = $this->collab->join($note, $request->user());
+        $snapshot = $this->collab->snapshot($note);
 
         return response()->json([
-            ...$this->collab->snapshot($note),
+            ...$snapshot,
+            'events' => $this->collab->pull($note, $snapshot['snapshot_event_id']),
             'canEdit' => $this->access->canEditNote($request->user(), $note),
             'members' => $members,
             'transport' => 'sse+yjs',
@@ -43,27 +45,37 @@ class CollabController extends Controller
             $this->collab->relayUpdate($note, $request->user(), $data['update']);
         }
 
-        $seq = (int) $note->collab_seq;
+        $seq = (int) $note->fresh()?->collab_seq;
+        $accepted = true;
         if (! empty($data['state'])) {
-            $seq = $this->collab->applyState($note, $request->user(), $data['state'], (int) ($data['seq'] ?? 0))['seq'];
+            $applied = $this->collab->applyState($note, $request->user(), $data['state'], (int) ($data['seq'] ?? 0));
+            $seq = $applied['seq'];
+            $accepted = $applied['accepted'];
         }
 
-        return response()->json(['ok' => true, 'seq' => $seq]);
+        return response()->json(['ok' => true, 'seq' => $seq, 'accepted' => $accepted]);
     }
 
     public function stream(Request $request, Note $note): StreamedResponse
     {
         $this->authorize('view', $note);
         $this->collab->join($note, $request->user());
-        $after = (int) $request->query('after', 0);
+        $after = max(
+            (int) $request->query('after', 0),
+            (int) $request->headers->get('Last-Event-ID', 0),
+        );
 
         return response()->stream(function () use ($request, $note, $after) {
             $cursor = $after;
             $started = time();
-            while (! connection_aborted() && (time() - $started) < 25) {
+            $budget = max(1, (int) config('oranotes.collab.sse_seconds', 25));
+            while (! connection_aborted() && (time() - $started) < $budget) {
                 $fresh = $note->fresh();
                 if (! $fresh || ! $this->access->canViewNote($request->user(), $fresh)) {
                     echo "event: revoked\ndata: {}\n\n";
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
                     flush();
                     break;
                 }
@@ -78,7 +90,6 @@ class CollabController extends Controller
                 }
                 usleep(400000);
             }
-            $this->collab->leave($note, $request->user());
         }, 200, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache',

@@ -2,49 +2,78 @@
 
 namespace App\Services\Collab;
 
+use App\Models\CollabEvent;
 use App\Models\Note;
 use App\Models\User;
 use App\Notifications\CollaboratorJoinedNotification;
 use App\Notifications\InviteAcceptedNotification;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class CollabService
 {
+    public const EVENT_RETENTION = 400;
+
+    public const PRESENCE_TTL_SECONDS = 120;
+
+    /**
+     * @return array{state: ?string, seq: int, updated_at: ?string, snapshot_event_id: int}
+     */
     public function snapshot(Note $note): array
     {
         return [
             'state' => $note->collab_state,
             'seq' => (int) $note->collab_seq,
             'updated_at' => $note->updated_at?->toIso8601String(),
+            'snapshot_event_id' => (int) ($note->collab_snapshot_event_id ?? 0),
         ];
     }
 
     /**
-     * Persist a Yjs update produced by a client. The CRDT merge happens in Yjs
-     * on peers; the server stores the latest encoded state (not last-write JSON).
+     * Persist a Yjs snapshot. Stale checkpoints never overwrite a newer row;
+     * their bytes are still appended so peers can merge them as updates.
      *
-     * @return array{seq: int}
+     * @return array{seq: int, accepted: bool}
      */
     public function applyState(Note $note, User $user, string $state, int $clientSeq = 0): array
     {
-        $note->forceFill([
-            'collab_state' => $state,
-            'collab_seq' => max((int) $note->collab_seq, $clientSeq) + 1,
-        ])->save();
+        return DB::transaction(function () use ($note, $user, $state, $clientSeq): array {
+            /** @var Note $locked */
+            $locked = Note::query()->whereKey($note->id)->lockForUpdate()->firstOrFail();
+            $current = (int) $locked->collab_seq;
+            $stale = $clientSeq < $current && filled($locked->collab_state);
 
-        $payload = [
-            'type' => 'state',
-            'state' => $state,
-            'seq' => (int) $note->collab_seq,
-            'user' => ['id' => $user->id, 'name' => $user->name],
-        ];
-        $this->push($note, $payload);
+            if ($stale) {
+                $this->push($locked, [
+                    'type' => 'update',
+                    'update' => $state,
+                    'user' => ['id' => $user->id, 'name' => $user->name],
+                ]);
 
-        return ['seq' => (int) $note->collab_seq];
+                return ['seq' => $current, 'accepted' => false];
+            }
+
+            $locked->forceFill([
+                'collab_state' => $state,
+                'collab_seq' => $current + 1,
+            ])->save();
+
+            $eventId = $this->push($locked, [
+                'type' => 'state',
+                'state' => $state,
+                'seq' => (int) $locked->collab_seq,
+                'user' => ['id' => $user->id, 'name' => $user->name],
+            ]);
+
+            $locked->forceFill(['collab_snapshot_event_id' => $eventId])->save();
+            $this->prune($locked);
+
+            return ['seq' => (int) $locked->collab_seq, 'accepted' => true];
+        });
     }
 
     /**
-     * Relay a binary Yjs update without replacing the snapshot yet.
+     * Persist and relay a binary Yjs update.
      */
     public function relayUpdate(Note $note, User $user, string $update): void
     {
@@ -60,16 +89,19 @@ class CollabService
      */
     public function join(Note $note, User $user): array
     {
-        $key = $this->presenceKey($note);
-        $members = Cache::get($key, []);
-        $isNew = ! isset($members[$user->id]);
-        $members[$user->id] = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'avatar' => $user->avatarUrl(),
-            'at' => now()->timestamp,
-        ];
-        Cache::put($key, $members, now()->addMinutes(10));
+        $isNew = false;
+        $members = $this->withPresenceLock($note, function (array $members) use ($user, &$isNew): array {
+            $isNew = ! isset($members[$user->id]);
+            $members[$user->id] = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'avatar' => $user->avatarUrl(),
+                'at' => now()->timestamp,
+            ];
+
+            return $members;
+        });
+
         $this->push($note, ['type' => 'presence', 'members' => array_values($members)]);
 
         if ($isNew && (int) $note->user_id !== (int) $user->id) {
@@ -84,10 +116,12 @@ class CollabService
      */
     public function leave(Note $note, User $user): array
     {
-        $key = $this->presenceKey($note);
-        $members = Cache::get($key, []);
-        unset($members[$user->id]);
-        Cache::put($key, $members, now()->addMinutes(10));
+        $members = $this->withPresenceLock($note, function (array $members) use ($user): array {
+            unset($members[$user->id]);
+
+            return $members;
+        });
+
         $this->push($note, ['type' => 'presence', 'members' => array_values($members)]);
 
         return array_values($members);
@@ -98,27 +132,70 @@ class CollabService
      */
     public function pull(Note $note, int $after): array
     {
-        $events = Cache::get($this->eventsKey($note), []);
-
-        return array_values(array_filter(
-            $events,
-            fn ($event) => ($event['id'] ?? 0) > $after,
-        ));
+        return CollabEvent::query()
+            ->where('note_id', $note->id)
+            ->where('id', '>', $after)
+            ->orderBy('id')
+            ->limit(200)
+            ->get()
+            ->map(fn (CollabEvent $event) => $event->toClientEvent())
+            ->values()
+            ->all();
     }
 
     /**
      * @param  array<string, mixed>  $event
      */
-    private function push(Note $note, array $event): void
+    private function push(Note $note, array $event): int
     {
-        $key = $this->eventsKey($note);
-        $events = Cache::get($key, []);
-        $event['id'] = (int) (end($events)['id'] ?? 0) + 1;
-        $events[] = $event;
-        if (count($events) > 80) {
-            $events = array_slice($events, -40);
+        $row = CollabEvent::query()->create([
+            'note_id' => $note->id,
+            'type' => (string) ($event['type'] ?? 'update'),
+            'payload' => $event,
+            'user_id' => $event['user']['id'] ?? null,
+            'created_at' => now(),
+        ]);
+
+        return (int) $row->id;
+    }
+
+    private function prune(Note $note): void
+    {
+        $keepFrom = CollabEvent::query()
+            ->where('note_id', $note->id)
+            ->orderByDesc('id')
+            ->skip(self::EVENT_RETENTION - 1)
+            ->value('id');
+
+        if ($keepFrom) {
+            CollabEvent::query()
+                ->where('note_id', $note->id)
+                ->where('id', '<', $keepFrom)
+                ->delete();
         }
-        Cache::put($key, $events, now()->addMinutes(10));
+    }
+
+    /**
+     * @param  callable(array<int, array<string, mixed>>): array<int, array<string, mixed>>  $callback
+     * @return array<int, array<string, mixed>>
+     */
+    private function withPresenceLock(Note $note, callable $callback): array
+    {
+        $key = $this->presenceKey($note);
+
+        return Cache::lock($key.':lock', 5)->block(3, function () use ($key, $callback): array {
+            /** @var array<int, array<string, mixed>> $members */
+            $members = Cache::get($key, []);
+            $cutoff = now()->timestamp - self::PRESENCE_TTL_SECONDS;
+            $members = array_filter(
+                $members,
+                fn ($member) => (int) ($member['at'] ?? 0) >= $cutoff,
+            );
+            $members = $callback($members);
+            Cache::put($key, $members, now()->addMinutes(5));
+
+            return $members;
+        });
     }
 
     private function notifyPresence(Note $note, User $user): void
@@ -140,10 +217,5 @@ class CollabService
     private function presenceKey(Note $note): string
     {
         return 'collab:presence:'.$note->uuid;
-    }
-
-    private function eventsKey(Note $note): string
-    {
-        return 'collab:events:'.$note->uuid;
     }
 }

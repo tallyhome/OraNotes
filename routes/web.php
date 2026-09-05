@@ -73,8 +73,6 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::post('/api/notes/{note}/duplicate', [NoteController::class, 'duplicate'])->name('api.notes.duplicate');
         Route::patch('/api/workspaces/{workspace}/positions', [NoteController::class, 'positions'])->name('api.notes.positions');
         Route::get('/api/notes/{note}/collab', [CollabController::class, 'show'])->name('api.notes.collab.show');
-        Route::post('/api/notes/{note}/collab', [CollabController::class, 'update'])->name('api.notes.collab.update');
-        Route::get('/api/notes/{note}/collab/stream', [CollabController::class, 'stream'])->name('api.notes.collab.stream');
         Route::post('/api/notes/{note}/collab/leave', [CollabController::class, 'leave'])->name('api.notes.collab.leave');
 
         Route::post('/api/notes/{note}/restore', [TrashController::class, 'restore'])->name('api.notes.restore');
@@ -86,6 +84,14 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 
         Route::get('/api/notes/{note}/export.json', [ExportController::class, 'json'])->name('api.notes.export.json');
         Route::get('/api/notes/{note}/export.html', [ExportController::class, 'html'])->name('api.notes.export.html');
+    });
+
+    Route::middleware('throttle:240,1')->group(function () {
+        Route::post('/api/notes/{note}/collab', [CollabController::class, 'update'])->name('api.notes.collab.update');
+    });
+
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::get('/api/notes/{note}/collab/stream', [CollabController::class, 'stream'])->name('api.notes.collab.stream');
     });
 
     Route::middleware('throttle:20,1')->group(function () {

@@ -73,7 +73,7 @@ class NoteService
      */
     public function update(Note $note, User $user, array $data): Note
     {
-        unset($data['user_id'], $data['workspace_id'], $data['id'], $data['uuid'], $data['collab_state'], $data['collab_seq']);
+        unset($data['user_id'], $data['workspace_id'], $data['id'], $data['uuid'], $data['collab_state'], $data['collab_seq'], $data['collab_snapshot_event_id']);
 
         if (array_key_exists('is_locked', $data)
             && (int) $note->user_id !== (int) $user->id

@@ -16,4 +16,8 @@ return [
     'install' => [
         'lock' => 'installed.lock',
     ],
+
+    'collab' => [
+        'sse_seconds' => (int) env('COLLAB_SSE_SECONDS', 25),
+    ],
 ];

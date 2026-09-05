@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.3 — 2026-09-05
+
+Toolbar OraEditor : plus de défilement horizontal dans le modal d’édition Post-it.
+
+- La barre d’outils **wrap** sur 3–4 lignes dans le bloc (icônes toujours visibles)
+- Outils overflow toujours affichés (`display: contents`) ; bouton « … » masqué
+- Plus de `overflow-x: auto` / media query 1100px — le wrap suit la largeur du conteneur
+- Bundle vendorisé OraEditor **0.1.4**
+- Colonne éditeur du modal : `min-w-0` pour ne pas élargir le sticky/modal
+
 ## 1.2.2 — 2026-09-05
 
 Un administrateur actif peut ouvrir le bureau et la note d’un autre utilisateur (modération).

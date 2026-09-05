@@ -75,6 +75,8 @@ body {
 
 .ora-editor-host {
     min-height: 360px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .ora-swal-popup {

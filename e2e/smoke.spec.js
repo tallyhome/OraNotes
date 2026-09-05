@@ -46,10 +46,18 @@ test.describe('OraNotes navigateur', () => {
     });
 
     test('ouvrir OraEditor sur une note existante', async ({ page }) => {
+        await page.setViewportSize({ width: 900, height: 800 });
         await login(page, 'alice@oranotes.test');
         await openWorkspace(page, 'Sprint');
         await page.locator('[data-testid="sticky-Ticket #1"]').dblclick({ force: true });
         await expect(page.locator('.ora-editor-host')).toBeVisible({ timeout: 20_000 });
+
+        const toolbar = page.locator('.ora-toolbar');
+        await expect(toolbar).toBeVisible();
+        await expect(page.locator('.ora-toolbar [data-mark=underline]')).toBeVisible();
+        await expect(page.locator('.ora-toolbar-more-btn')).toBeHidden();
+        const overflows = await toolbar.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+        expect(overflows).toBeFalsy();
     });
 
     test('admin dashboard et mises à jour', async ({ page }) => {

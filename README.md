@@ -2,7 +2,7 @@
 
 Application web de prise de notes **spatiale** : un bureau virtuel de Post-it. Chaque note est un document [OraEditor](https://github.com/tallyhome/OraEditor) complet.
 
-> Version : **1.2.2**
+> Version : **1.2.3**
 
 ## À propos
 
@@ -10,7 +10,7 @@ OraNotes n’est pas une liste de notes. L’organisation spatiale (position, ta
 
 ## Intégration OraEditor
 
-**On n’a pas réinventé d’éditeur riche.** OraEditor **0.1.3** est le moteur.
+**On n’a pas réinventé d’éditeur riche.** OraEditor **0.1.4** est le moteur.
 
 | Point | Choix |
 |---|---|
@@ -27,7 +27,7 @@ Détail : [docs/ora-editor-analysis.md](docs/ora-editor-analysis.md) · [docs/ar
 - PHP 8.3+ · **Laravel 13**
 - Vue 3 · Inertia.js · Vite 8 · Tailwind CSS 3 · Yjs 13
 - SQLite (local / tests) · MySQL 8 / MariaDB (production)
-- OraEditor 0.1.3 (bundle `ready/`)
+- OraEditor 0.1.4 (bundle `ready/`)
 
 ## Prérequis
 

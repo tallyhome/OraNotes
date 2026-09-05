@@ -1,4 +1,4 @@
-# Analyse OraEditor (v0.1.3)
+# Analyse OraEditor (v0.1.4)
 
 Source : [tallyhome/OraEditor](https://github.com/tallyhome/OraEditor) — lecture du dépôt public (README, `docs/`, `packages/`, `ready/ora-editor/`).
 
@@ -6,7 +6,7 @@ Source : [tallyhome/OraEditor](https://github.com/tallyhome/OraEditor) — lectu
 
 Éditeur de contenu riche **autonome et offline**. Le moteur TypeScript ne dépend d’aucun backend ni framework UI (pas de React, Vue, Laravel, CDN).
 
-- Version actuelle : **0.1.3** (`CORE_VERSION`)
+- Version actuelle : **0.1.4** (`CORE_VERSION`) — toolbar wrap dans les hôtes étroits
 - Document Model : **version 1** (`DOCUMENT_MODEL_VERSION`)
 - Licence du package Laravel : **MIT** (pas de fichier LICENSE racine ; notices à conserver)
 
@@ -114,7 +114,7 @@ Kit officiel « rien à compiler » :
 - `ora-editor.js` (IIFE, `window.OraEditor`)
 - `ora-editor.mjs` (ESM)
 - `ora-editor.css`
-- `ora-editor.manifest.json` (version 0.1.3, canal `stable`, checksums SHA-256)
+- `ora-editor.manifest.json` (version 0.1.4, canal `stable`, checksums SHA-256)
 
 C’est la méthode d’intégration **recommandée** tant que les packages npm/Composer ne sont pas publiés.
 

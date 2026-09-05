@@ -6,6 +6,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { formatDateTime, paginatorRows, roleLabel } from '@/composables/useAdminUi';
+import { confirm } from '@/lib/swal';
 
 const props = defineProps({
     users: Object,
@@ -42,8 +43,14 @@ function setRole(user, role) {
     router.patch(route('admin.users.update', user.id), { role });
 }
 
-function remove(user) {
-    if (!confirm('Désactiver et mettre cet utilisateur à la corbeille ? Ses bureaux restent jusqu’à purge.')) {
+async function remove(user) {
+    const ok = await confirm({
+        title: 'Mettre cet utilisateur à la corbeille ?',
+        text: 'Le compte sera désactivé. Ses bureaux restent jusqu’à purge.',
+        confirmText: 'Mettre à la corbeille',
+        destructive: true,
+    });
+    if (!ok) {
         return;
     }
     router.delete(route('admin.users.destroy', user.id));

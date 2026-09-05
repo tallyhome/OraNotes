@@ -25,12 +25,23 @@ test.describe('OraNotes navigateur', () => {
         await expect(page.getByRole('button', { name: 'Répartir horizontalement' })).toBeVisible();
     });
 
+    test('créer un bureau via SweetAlert2', async ({ page }) => {
+        await login(page, 'alice@oranotes.test');
+        await page.locator('[data-testid="create-workspace"]').click();
+        await expect(page.locator('.swal2-popup')).toBeVisible();
+        await page.locator('.swal2-input').fill('Bureau Swal');
+        await page.locator('.swal2-confirm').click();
+        await expect(page.getByRole('link', { name: /Bureau Swal/ })).toBeVisible();
+    });
+
     test('verrouiller un bureau depuis les paramètres', async ({ page }) => {
         await login(page, 'alice@oranotes.test');
         await openWorkspace(page, 'Sprint');
         await page.locator('[data-testid="workspace-settings"]').click();
         await expect(page.locator('[data-testid="toggle-lock"]')).toBeVisible();
         await page.locator('[data-testid="toggle-lock"]').click();
+        await expect(page.locator('.swal2-popup')).toBeVisible();
+        await page.locator('.swal2-confirm').click();
         await expect(page.locator('[data-testid="workspace-locked"]')).toBeVisible();
     });
 

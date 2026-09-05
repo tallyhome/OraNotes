@@ -6,6 +6,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { formatDateTime, paginatorRows } from '@/composables/useAdminUi';
+import { confirm, prompt } from '@/lib/swal';
 
 const props = defineProps({
     workspaces: Object,
@@ -32,7 +33,17 @@ function apply(nextStatus = status.value) {
     }, { preserveState: true, replace: true });
 }
 
-function lockToggle(ws) {
+async function lockToggle(ws) {
+    const ok = await confirm({
+        title: ws.is_locked ? 'Déverrouiller ce bureau ?' : 'Verrouiller ce bureau ?',
+        text: ws.is_locked
+            ? 'Le bureau pourra à nouveau être modifié ou mis à la corbeille.'
+            : 'Un bureau verrouillé ne peut pas être mis à la corbeille.',
+        confirmText: ws.is_locked ? 'Déverrouiller' : 'Verrouiller',
+    });
+    if (!ok) {
+        return;
+    }
     router.post(route(ws.is_locked ? 'admin.workspaces.unlock' : 'admin.workspaces.lock', ws.id));
 }
 
@@ -40,9 +51,17 @@ function restore(ws) {
     router.post(route('admin.workspaces.restore', ws.id));
 }
 
-function purge(ws) {
-    const name = window.prompt(`Tapez « ${ws.name} » pour supprimer définitivement ce bureau.`);
-    if (name !== ws.name) {
+async function purge(ws) {
+    const name = await prompt({
+        title: 'Supprimer définitivement ce bureau ?',
+        text: `Tapez « ${ws.name} » pour confirmer la purge.`,
+        inputLabel: 'Nom du bureau',
+        inputPlaceholder: ws.name,
+        expected: ws.name,
+        confirmText: 'Purger',
+        destructive: true,
+    });
+    if (!name) {
         return;
     }
     router.delete(route('admin.workspaces.destroy', ws.id), { data: { confirm_name: name } });

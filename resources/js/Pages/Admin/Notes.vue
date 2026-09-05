@@ -6,6 +6,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { formatDateTime, paginatorRows } from '@/composables/useAdminUi';
+import { confirm } from '@/lib/swal';
 
 const props = defineProps({
     notes: Object,
@@ -35,8 +36,14 @@ function restore(note) {
     router.post(route('admin.notes.restore', note.id));
 }
 
-function purge(note) {
-    if (!confirm('Supprimer définitivement cette note ?')) {
+async function purge(note) {
+    const ok = await confirm({
+        title: 'Supprimer définitivement cette note ?',
+        text: 'Cette action est irréversible.',
+        confirmText: 'Purger',
+        destructive: true,
+    });
+    if (!ok) {
         return;
     }
     router.delete(route('admin.notes.destroy', note.id));

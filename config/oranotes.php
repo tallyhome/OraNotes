@@ -3,7 +3,7 @@
 return [
     'version' => trim((string) @file_get_contents(base_path('VERSION'))) ?: '0.0.0',
 
-    'ora_editor_version' => '0.1.3',
+    'ora_editor_version' => '0.1.4',
 
     'update' => [
         'repository' => env('ORANOTES_UPDATE_REPO', 'tallyhome/OraNotes'),

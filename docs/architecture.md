@@ -15,7 +15,7 @@ Mélange : bureau virtuel + tableau blanc + Post-it + notes modernes + espace co
 | Backend | **Laravel 13** + PHP 8.3+ | Version courante, Policies, Form Requests |
 | Auth | Laravel Breeze (Inertia) | Register / login / reset / verify / profil |
 | Frontend | **Vue 3 + Inertia.js + Vite** | SPA-like pour le canvas, pages Laravel, pas de double API REST obligatoire |
-| Éditeur | **OraEditor 0.1.3** bundle `ready/` | Officiel, rien à compiler, Core indépendant |
+| Éditeur | **OraEditor 0.1.4** bundle `ready/` | Officiel, rien à compiler, Core indépendant |
 | CSS | CSS custom + tokens (clair/sombre) | Look Post-it, pas un CRUD générique |
 | DB locale / tests | **SQLite** | Simple, documenté, CI |
 | DB prod | MySQL 8 / MariaDB | Documenté dans `.env.example` |

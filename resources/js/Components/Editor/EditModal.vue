@@ -183,7 +183,7 @@ onUnmounted(() => {
                 <button type="button" class="rounded-lg px-3 py-1 text-sm hover:bg-stone-100 dark:hover:bg-stone-800" @click="close">Fermer</button>
             </header>
             <div class="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_16rem]">
-                <div class="min-h-0 overflow-y-auto p-3">
+                <div class="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto p-3">
                     <OraEditorHost
                         ref="host"
                         :content="note.document"

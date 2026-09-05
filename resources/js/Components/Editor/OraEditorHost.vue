@@ -161,5 +161,5 @@ defineExpose({
 </script>
 
 <template>
-    <div ref="host" class="ora-editor-host min-h-[360px] rounded-xl bg-white dark:bg-stone-900" />
+    <div ref="host" class="ora-editor-host min-h-[360px] min-w-0 max-w-full rounded-xl bg-white dark:bg-stone-900" />
 </template>

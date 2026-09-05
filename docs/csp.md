@@ -34,7 +34,7 @@ En local (`APP_ENV=local`) la politique reste large pour le HMR Vite (`localhost
 ## Exceptions assumées
 
 - **`unsafe-inline` scripts** : Ziggy génère un `<script>` inline ; Inertia peut injecter du head. Un nonce unique par requête est préparé (`$cspNonce`) pour une migration future. Tant que Ziggy n’est pas exporté en fichier, `unsafe-inline` reste nécessaire.
-- **`unsafe-inline` styles** : OraEditor et Tailwind posent des styles inline (positions canvas, thèmes). `unsafe-eval` n’est **pas** ajouté : le bundle Vite de production et l’IIFE OraEditor 0.1.3 n’en ont pas besoin.
+- **`unsafe-inline` styles** : OraEditor et Tailwind posent des styles inline (positions canvas, thèmes). `unsafe-eval` n’est **pas** ajouté : le bundle Vite de production et l’IIFE OraEditor 0.1.4 n’en ont pas besoin.
 - **`img-src https:`** : les URLs d’images dans le Document Model sont déjà filtrées côté serveur (`HtmlSanitizer::isSafeUrl`).
 
 ## Ce qui n’est pas simulé

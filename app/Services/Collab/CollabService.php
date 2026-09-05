@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\User;
 use App\Notifications\CollaboratorJoinedNotification;
 use App\Notifications\InviteAcceptedNotification;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +38,7 @@ class CollabService
      */
     public function applyState(Note $note, User $user, string $state, int $clientSeq = 0): array
     {
-        return DB::transaction(function () use ($note, $user, $state, $clientSeq): array {
+        return $this->retryOnLock(fn () => DB::transaction(function () use ($note, $user, $state, $clientSeq): array {
             /** @var Note $locked */
             $locked = Note::query()->whereKey($note->id)->lockForUpdate()->firstOrFail();
             $current = (int) $locked->collab_seq;
@@ -69,7 +70,7 @@ class CollabService
             $this->prune($locked);
 
             return ['seq' => (int) $locked->collab_seq, 'accepted' => true];
-        });
+        }));
     }
 
     /**
@@ -77,11 +78,13 @@ class CollabService
      */
     public function relayUpdate(Note $note, User $user, string $update): void
     {
-        $this->push($note, [
-            'type' => 'update',
-            'update' => $update,
-            'user' => ['id' => $user->id, 'name' => $user->name],
-        ]);
+        $this->retryOnLock(function () use ($note, $user, $update): void {
+            $this->push($note, [
+                'type' => 'update',
+                'update' => $update,
+                'user' => ['id' => $user->id, 'name' => $user->name],
+            ]);
+        });
     }
 
     /**
@@ -141,6 +144,41 @@ class CollabService
             ->map(fn (CollabEvent $event) => $event->toClientEvent())
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     */
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function retryOnLock(callable $callback): mixed
+    {
+        $attempts = 0;
+
+        while (true) {
+            $attempts++;
+            try {
+                return $callback();
+            } catch (QueryException $exception) {
+                if ($attempts >= 4 || ! $this->isLockError($exception)) {
+                    throw $exception;
+                }
+                usleep(25_000 * $attempts);
+            }
+        }
+    }
+
+    private function isLockError(QueryException $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'database is locked')
+            || str_contains($message, 'Deadlock found')
+            || str_contains($message, '1213');
     }
 
     /**

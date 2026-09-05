@@ -22,7 +22,7 @@
 | Plusieurs serveurs | Correct **uniquement** si tous partagent la **même** base (événements + snapshots) et un cache **partagé** (database/Redis) pour la présence. `CACHE_STORE=array` ou un cache fichier local à chaque nœud casse la présence (pas le document). |
 | SSE « horizontalement scalable » sans store partagé | **Non.** SSE n’est pas un bus pub/sub. Chaque worker lit le journal en base ; il n’y a pas de fan-out Redis. Un sticky session n’est pas requis pour la correction, mais 50 flux SSE occupent 50 workers PHP. |
 
-SQLite tient la correction (inserts atomiques, `lockForUpdate`) mais **pas** une charge élevée : les flux SSE relisent la note toutes les 400 ms. Pour 10+ pairs simultanés, utiliser MySQL/MariaDB (ou Redis plus tard).
+SQLite tient la correction (inserts atomiques, `lockForUpdate`, `busy_timeout` 5 s, WAL) mais **pas** une charge élevée : les flux SSE relisent la note toutes les 400 ms et le rate-limiter écrit dans la table `cache`. Pour 10+ pairs simultanés, utiliser MySQL/MariaDB (ou Redis plus tard).
 
 ## Limites assumées
 

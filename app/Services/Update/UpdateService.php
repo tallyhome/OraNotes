@@ -5,6 +5,9 @@ namespace App\Services\Update;
 use App\Enums\ActivityAction;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use Composer\CaBundle\CaBundle;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -16,12 +19,19 @@ class UpdateService
     public function __construct(private ActivityLogger $logger) {}
 
     /**
-     * @return array{current: string, latest: string|null, available: bool, changelog: string|null, html_url: string|null, published_at: string|null}
+     * @return array{current: string, latest: string|null, available: bool, changelog: string|null, html_url: string|null, published_at: string|null, asset: string|null, error: string|null, error_code: string|null, remediation: list<string>}
      */
     public function status(): array
     {
         $current = (string) config('oranotes.version');
-        $release = $this->latestRelease();
+
+        try {
+            $release = $this->fetchLatestRelease();
+        } catch (ConnectionException $e) {
+            return $this->unavailableStatus($current, $e);
+        } catch (ValidationException $e) {
+            return $this->unavailableStatus($current, $e);
+        }
 
         $latest = $release['tag'] ?? null;
 
@@ -33,6 +43,9 @@ class UpdateService
             'html_url' => $release['html_url'] ?? null,
             'published_at' => $release['published_at'] ?? null,
             'asset' => $release['asset_name'] ?? null,
+            'error' => null,
+            'error_code' => null,
+            'remediation' => [],
         ];
     }
 
@@ -41,15 +54,55 @@ class UpdateService
      */
     public function latestRelease(): array
     {
+        try {
+            return $this->fetchLatestRelease();
+        } catch (ConnectionException $e) {
+            throw ValidationException::withMessages([
+                'update' => $this->transportErrorMessage($e),
+            ]);
+        }
+    }
+
+    /**
+     * TLS verify option for GitHub HTTP calls. Always verifies — never `false`.
+     */
+    public function tlsVerifyOption(): bool|string
+    {
+        return $this->resolveCaBundlePath() ?? true;
+    }
+
+    public function resolveCaBundlePath(): ?string
+    {
+        $candidates = [
+            config('oranotes.update.ca_bundle'),
+            storage_path('app/cacert.pem'),
+            ini_get('curl.cainfo') ?: null,
+            ini_get('openssl.cafile') ?: null,
+            class_exists(CaBundle::class) ? CaBundle::getSystemCaRootBundlePath() : null,
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && $path !== '' && is_file($path) && is_readable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchLatestRelease(): array
+    {
         $repo = $this->repository();
         $api = rtrim((string) config('oranotes.update.api'), '/');
         $url = $api.'/repos/'.$repo.'/releases/latest';
 
         $this->assertOfficialApi($url);
 
-        $response = Http::timeout((int) config('oranotes.update.timeout', 20))
+        $response = $this->updaterHttp((int) config('oranotes.update.timeout', 20))
             ->acceptJson()
-            ->withHeaders(['User-Agent' => 'OraNotes-Updater'])
             ->get($url);
 
         if (! $response->successful()) {
@@ -259,10 +312,13 @@ class UpdateService
     {
         $this->assertOfficialDownload($url);
 
-        $response = Http::timeout(120)
-            ->withHeaders(['User-Agent' => 'OraNotes-Updater'])
-            ->sink($dest)
-            ->get($url);
+        try {
+            $response = $this->updaterHttp(120)
+                ->sink($dest)
+                ->get($url);
+        } catch (ConnectionException $e) {
+            throw ValidationException::withMessages(['update' => $this->transportErrorMessage($e)]);
+        }
 
         if (! $response->successful() || ! is_file($dest) || filesize($dest) < 100) {
             throw ValidationException::withMessages(['update' => 'Téléchargement de l’archive officielle impossible.']);
@@ -276,7 +332,13 @@ class UpdateService
         }
 
         $this->assertOfficialDownload($checksumUrl);
-        $body = Http::timeout(20)->withHeaders(['User-Agent' => 'OraNotes-Updater'])->get($checksumUrl);
+
+        try {
+            $body = $this->updaterHttp(20)->get($checksumUrl);
+        } catch (ConnectionException $e) {
+            throw ValidationException::withMessages(['update' => $this->transportErrorMessage($e)]);
+        }
+
         if (! $body->successful()) {
             throw ValidationException::withMessages(['update' => 'Somme de contrôle officielle illisible.']);
         }
@@ -419,6 +481,74 @@ class UpdateService
         }
 
         return $extracted;
+    }
+
+    private function updaterHttp(int $timeout): PendingRequest
+    {
+        return Http::timeout($timeout)
+            ->connectTimeout(min(10, $timeout))
+            ->withOptions(['verify' => $this->tlsVerifyOption()])
+            ->withHeaders(['User-Agent' => 'OraNotes-Updater']);
+    }
+
+    /**
+     * @return array{current: string, latest: null, available: false, changelog: null, html_url: null, published_at: null, asset: null, error: string, error_code: string, remediation: list<string>}
+     */
+    private function unavailableStatus(string $current, \Throwable $e): array
+    {
+        $ssl = $this->isTlsCertificateError($e);
+
+        return [
+            'current' => $current,
+            'latest' => null,
+            'available' => false,
+            'changelog' => null,
+            'html_url' => null,
+            'published_at' => null,
+            'asset' => null,
+            'error' => $this->transportErrorMessage($e),
+            'error_code' => $ssl ? 'ssl_ca' : 'transport',
+            'remediation' => $ssl ? $this->sslRemediationSteps() : [],
+        ];
+    }
+
+    private function transportErrorMessage(\Throwable $e): string
+    {
+        if ($this->isTlsCertificateError($e)) {
+            return 'Impossible de vérifier le certificat SSL de GitHub. PHP/cURL n’a pas de bundle d’autorités de certification (fréquent sous Windows, XAMPP, Laragon ou WAMP).';
+        }
+
+        if ($e instanceof ValidationException) {
+            $messages = $e->errors()['update'] ?? [];
+
+            return is_array($messages) ? (string) ($messages[0] ?? 'Vérification des mises à jour indisponible.') : (string) $messages;
+        }
+
+        return 'Vérification des mises à jour indisponible.';
+    }
+
+    private function isTlsCertificateError(\Throwable $e): bool
+    {
+        $haystack = strtolower($e->getMessage().' '.$e->getPrevious()?->getMessage());
+
+        return str_contains($haystack, 'ssl certificate')
+            || str_contains($haystack, 'unable to get local issuer')
+            || str_contains($haystack, 'curl error 60')
+            || str_contains($haystack, 'certificate verify failed')
+            || str_contains($haystack, 'cainfo')
+            || str_contains($haystack, 'ca bundle');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function sslRemediationSteps(): array
+    {
+        return [
+            'Dans php.ini, définissez curl.cainfo et openssl.cafile vers un fichier CA (cacert.pem Mozilla), puis redémarrez PHP/Apache.',
+            'Ou définissez la variable d’environnement ORANOTES_CA_BUNDLE (ou CURL_CA_BUNDLE) avec le chemin absolu de ce fichier.',
+            'Vous pouvez aussi placer le fichier dans storage/app/cacert.pem.',
+        ];
     }
 
     private function normalize(string $version): string

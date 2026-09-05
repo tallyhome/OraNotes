@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Services\Admin\AdminStatsService;
 use App\Services\Update\UpdateService;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,20 +13,7 @@ class DashboardController extends Controller
 {
     public function __invoke(AdminStatsService $stats, UpdateService $updates): Response
     {
-        $update = [
-            'current' => config('oranotes.version'),
-            'latest' => null,
-            'available' => false,
-            'error' => null,
-        ];
-
-        try {
-            $update = array_merge($update, $updates->status());
-        } catch (ValidationException $e) {
-            $update['error'] = $e->getMessage();
-        } catch (\Throwable) {
-            $update['error'] = 'Vérification des mises à jour indisponible.';
-        }
+        $update = $updates->status();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats->dashboard(),
